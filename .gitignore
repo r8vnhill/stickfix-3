@@ -2,8 +2,6 @@
 .gradle                  # Ignore Gradle build output directory
 build/                   # Ignore build output
 !gradle/wrapper/gradle-wrapper.jar # Exclude gradle-wrapper.jar from being ignored
-!**/src/main/**/build/   # Exclude main build directories from being ignored
-!**/src/test/**/build/   # Exclude test build directories from being ignored
 
 ### IntelliJ IDEA ###
 .idea/modules.xml        # Ignore IntelliJ modules file
@@ -98,3 +96,4 @@ $RECYCLE.BIN/            # Ignore recycle bin
 *.msi                    # Ignore Microsoft installer files
 *.msix                   # Ignore Microsoft installer files (newer format)
 *.ms
+
