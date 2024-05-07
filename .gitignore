@@ -1,0 +1,100 @@
+# Gradle files
+.gradle                  # Ignore Gradle build output directory
+build/                   # Ignore build output
+!gradle/wrapper/gradle-wrapper.jar # Exclude gradle-wrapper.jar from being ignored
+!**/src/main/**/build/   # Exclude main build directories from being ignored
+!**/src/test/**/build/   # Exclude test build directories from being ignored
+
+### IntelliJ IDEA ###
+.idea/modules.xml        # Ignore IntelliJ modules file
+.idea/jarRepositories.xml # Ignore IntelliJ repository definitions
+.idea/compiler.xml       # Ignore IntelliJ compiler configuration
+.idea/libraries/         # Ignore IntelliJ libraries directory
+*.iws                    # Ignore IntelliJ workspace files
+*.iml                    # Ignore IntelliJ Module files
+*.ipr                    # Ignore IntelliJ project files
+out/                     # Ignore compiler output directory
+!**/src/main/**/out/     # Exclude main output directories from being ignored
+!**/src/test/**/out/     # Exclude test output directories from being ignored
+
+### Eclipse ###
+.apt_generated           # Ignore Eclipse annotation processing files
+.classpath               # Ignore Eclipse classpath file
+.factorypath             # Ignore Eclipse factory path file
+.project                 # Ignore Eclipse project description file
+.settings                # Ignore Eclipse settings directory
+.springBeans             # Ignore Spring beans files
+.sts4-cache              # Ignore Spring Tool Suite 4 cache directory
+bin/                     # Ignore binary output directory
+!**/src/main/**/bin/     # Exclude main bin directories from being ignored
+!**/src/test/**/bin/     # Exclude test bin directories from being ignored
+
+### NetBeans ###
+/nbproject/private/      # Ignore private project settings for NetBeans
+/nbbuild/                # Ignore NetBeans build output
+/dist/                   # Ignore distribution output
+/nbdist/                 # Ignore NetBeans distribution directory
+/.nb-gradle/             # Ignore NetBeans Gradle build folder
+
+### VS Code ###
+.vscode/                 # Ignore Visual Studio Code settings folder
+
+### Mac OS ###
+.DS_Store                # Ignore Mac OS desktop services store file
+
+# Various IDEs general settings
+.idea/**/workspace.xml   # Ignore workspace definitions
+.idea/**/tasks.xml       # Ignore task definitions
+.idea/**/usage.statistics.xml # Ignore usage statistics
+.idea/**/dictionaries    # Ignore dictionaries
+.idea/**/shelf           # Ignore shelf settings
+.idea/**/aws.xml         # Ignore AWS configurations
+.idea/**/contentModel.xml # Ignore content models
+.idea/**/dataSources/    # Ignore data sources
+.idea/**/dataSources.ids # Ignore data source identifiers
+.idea/**/dataSources.local.xml # Ignore local data sources
+.idea/**/sqlDataSources.xml # Ignore SQL data sources
+.idea/**/dynamic.xml     # Ignore dynamic elements
+.idea/**/uiDesigner.xml  # Ignore UI designer configurations
+.idea/**/dbnavigator.xml # Ignore database navigator settings
+.idea/**/gradle.xml      # Ignore Gradle integration settings
+.idea/**/libraries       # Ignore library definitions
+cmake-build-*            # Ignore CMake build directories
+.idea/**/mongoSettings.xml # Ignore MongoDB settings
+.idea_modules/           # Ignore IntelliJ module files
+atlassian-ide-plugin.xml # Ignore Atlassian IDE plugin settings
+.idea/replstate.xml      # Ignore IntelliJ REPL state
+.idea/sonarlint/         # Ignore SonarLint configurations
+com_crashlytics_export_strings.xml # Ignore Crashlytics string export
+crashlytics.properties   # Ignore Crashlytics properties
+crashlytics-build.properties # Ignore Crashlytics build properties
+fabric.properties        # Ignore Fabric properties
+.idea/httpRequests       # Ignore HTTP requests storage
+.idea/caches/build_file_checksums.ser # Ignore build file checksums
+
+# Database files
+*.accdb                  # Ignore Access database files
+*.db                     # Ignore generic database files
+*.dbf                    # Ignore database files
+*.mdb                    # Ignore Microsoft Access database files
+*.pdb                    # Ignore program database
+*.sqlite3                # Ignore SQLite database files
+*.db-shm                 # Ignore SQLite shared memory file
+*.db-wal                 # Ignore SQLite write-ahead log file
+
+# Thumbnails
+Thumbs.db                # Ignore Windows thumbnail cache
+Thumbs.db:encryptable    # Ignore encryptable thumbnail cache
+ehthumbs.db              # Ignore extended thumbnail database
+ehthumbs_vista.db        # Ignore Vista thumbnail database
+
+# System files
+*.stackdump              # Ignore stack dumps
+[Dd]esktop.ini           # Ignore desktop ini files
+$RECYCLE.BIN/            # Ignore recycle bin
+
+# Installers
+*.cab                    # Ignore Microsoft Cabinet files
+*.msi                    # Ignore Microsoft installer files
+*.msix                   # Ignore Microsoft installer files (newer format)
+*.ms
