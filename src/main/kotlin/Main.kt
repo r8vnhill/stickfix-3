@@ -1,5 +1,5 @@
-package cl.ravenhill
+/*
+ * Copyright (c) 2024, Ignacio Slater M.
+ * 2-Clause BSD License.
+ */
 
-fun main() {
-    println("Hello World!")
-}
