@@ -28,7 +28,7 @@ class MapDatabaseServiceTest : FreeSpec(
 
             "can set the value of the API key" {
                 checkAll<String> { key ->
-                    databaseService.setApiToken(key)
+                    databaseService.apiToken = key
                     databaseService.apiToken shouldBe key
                 }
             }

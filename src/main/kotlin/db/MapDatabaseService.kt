@@ -23,6 +23,7 @@ import db.DatabaseService.Companion.API_TOKEN_KEY
  * ```
  *
  * @constructor Creates an instance of `MapDatabaseService`.
+ * @property apiToken The API token used for authentication.
  */
 class MapDatabaseService : DatabaseService {
 
@@ -33,8 +34,11 @@ class MapDatabaseService : DatabaseService {
         API_TOKEN_KEY to ""
     )
 
-    override val apiToken: String
+    override var apiToken: String
         get() = _meta[API_TOKEN_KEY] ?: ""
+        set(value) {
+            _meta[API_TOKEN_KEY] = value
+        }
 
     /**
      * A read-only view of the `_meta` map.
@@ -48,14 +52,4 @@ class MapDatabaseService : DatabaseService {
      * @return Returns itself, allowing for any further configuration to be chained.
      */
     override fun init() = this
-
-    /**
-     * Sets the API key for simulated database operations. This key can be used to validate operations or
-     * simulate scenarios where authentication is required.
-     *
-     * @param token The API key to be used, should be a non-null string.
-     */
-    override fun setApiToken(token: String) {
-        _meta[API_TOKEN_KEY] = token
-    }
 }

@@ -36,7 +36,7 @@ package db
  */
 interface DatabaseService {
 
-    val apiToken: String
+    var apiToken: String
 
     /**
      * Initializes the database service. This function should set up the necessary components or
@@ -57,16 +57,6 @@ interface DatabaseService {
      *  testing scenarios.
      */
     fun init(): DatabaseService
-
-    /**
-     * Sets the API key for the database service. This API key may be required for authentication
-     * and authorization purposes when interacting with external services or databases.
-     *
-     * @param token
-     *  The API key to be used for accessing the database. This should be a valid, non-null string
-     *  representing the key provided by the database service.
-     */
-    fun setApiToken(token: String)
 
     companion object {
 
