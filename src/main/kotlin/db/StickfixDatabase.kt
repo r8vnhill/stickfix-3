@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 
 /**
  * A concrete implementation of the `DatabaseService` that manages a database connection
@@ -63,4 +64,14 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
                 Meta.insert { it[key] = value }
             }
         }
+
+    override fun toString() =
+        "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
+
+    override fun equals(other: Any?): Boolean = when (other) {
+        is StickfixDatabase -> jdbcUrl == other.jdbcUrl && driverName == other.driverName
+        else                -> false
+    }
+
+    override fun hashCode(): Int = Objects.hash(StickfixDatabase::class, jdbcUrl, driverName)
 }

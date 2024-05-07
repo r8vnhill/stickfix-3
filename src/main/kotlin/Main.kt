@@ -4,6 +4,7 @@
  */
 
 import bot.LocalBot
+import bot.TelegramBot
 import db.DatabaseService
 import db.MapDatabaseService
 import org.slf4j.LoggerFactory
@@ -40,4 +41,9 @@ private fun initDatabase(db: DatabaseService): TimedValue<DatabaseService> {
     return measureTimedValue {
         db.init()
     }
+}
+
+context(TelegramBot)
+fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
+
 }
