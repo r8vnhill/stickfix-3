@@ -5,6 +5,7 @@
 
 package db
 
+import cl.ravenhill.stickfix.db.StickfixDatabase
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb

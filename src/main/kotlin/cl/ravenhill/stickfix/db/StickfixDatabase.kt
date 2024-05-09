@@ -3,9 +3,10 @@
  * 2-Clause BSD License.
  */
 
-package db
+package cl.ravenhill.stickfix.db
 
-import db.schema.Meta
+import cl.ravenhill.stickfix.chat.ReadUser
+import cl.ravenhill.stickfix.db.schema.Meta
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
@@ -64,6 +65,10 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
                 Meta.insert { it[key] = value }
             }
         }
+
+    override fun getUser(user: ReadUser): ReadUser? {
+        TODO()
+    }
 
     override fun toString() =
         "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"

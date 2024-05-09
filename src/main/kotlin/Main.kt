@@ -3,10 +3,10 @@
  * 2-Clause BSD License.
  */
 
-import bot.LocalBot
-import bot.TelegramBot
-import db.DatabaseService
-import db.MapDatabaseService
+import cl.ravenhill.stickfix.bot.LocalBot
+import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.MapDatabaseService
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimedValue

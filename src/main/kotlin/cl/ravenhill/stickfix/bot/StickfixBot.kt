@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package bot
+package cl.ravenhill.stickfix.bot
 
 import com.github.kotlintelegrambot.bot
 

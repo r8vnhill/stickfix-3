@@ -3,12 +3,12 @@
  * 2-Clause BSD License.
  */
 
-package db.schema
+package cl.ravenhill.stickfix.db.schema
 
-import db.schema.Meta.id
-import db.schema.Meta.key
-import db.schema.Meta.primaryKey
-import db.schema.Meta.value
+import cl.ravenhill.stickfix.db.schema.Meta.id
+import cl.ravenhill.stickfix.db.schema.Meta.key
+import cl.ravenhill.stickfix.db.schema.Meta.primaryKey
+import cl.ravenhill.stickfix.db.schema.Meta.value
 import org.jetbrains.exposed.dao.id.IdTable
 
 /**

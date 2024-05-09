@@ -5,6 +5,7 @@
 
 package db
 
+import cl.ravenhill.stickfix.db.MapDatabaseService
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldBeEmpty

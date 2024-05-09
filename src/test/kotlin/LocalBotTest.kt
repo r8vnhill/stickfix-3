@@ -1,4 +1,4 @@
-import bot.LocalBot
+import cl.ravenhill.stickfix.bot.LocalBot
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.checkAll

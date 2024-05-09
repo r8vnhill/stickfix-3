@@ -3,7 +3,10 @@
  * 2-Clause BSD License.
  */
 
-package bot
+package cl.ravenhill.stickfix.bot
+
+import cl.ravenhill.stickfix.chat.ReadUser
+import com.github.kotlintelegrambot.entities.ReplyMarkup
 
 /**
  * Defines the structure for a Telegram bot by specifying the required properties that any
@@ -28,4 +31,6 @@ interface TelegramBot {
      * listeners for incoming commands or messages.
      */
     fun start(): String
+
+    fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup? = null): BotResult
 }
