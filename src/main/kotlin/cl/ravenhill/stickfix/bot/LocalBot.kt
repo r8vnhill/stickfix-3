@@ -20,11 +20,6 @@ private const val ALREADY_STARTED = "Bot already started"
 private const val BOT_STARTED = "Bot started"
 
 /**
- * Represents a constant string value indicating that a message has been sent successfully.
- */
-private const val MESSAGE_SENT = "Message sent"
-
-/**
  * A simple implementation of the `TelegramBot` interface that represents a local Telegram bot.
  * This class uses a basic mechanism to prevent multiple starts of the bot, ensuring that it only
  * starts once.
