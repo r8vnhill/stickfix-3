@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package db
+package cl.ravenhill.stickfix.db
 
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import io.kotest.core.spec.style.FreeSpec
