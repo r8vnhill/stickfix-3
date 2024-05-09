@@ -5,6 +5,7 @@
 
 package cl.ravenhill.stickfix.bot
 
+import cl.ravenhill.stickfix.bot.TelegramBot.Companion.messageSentTo
 import cl.ravenhill.stickfix.chat.ReadUser
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 
@@ -83,5 +84,5 @@ class LocalBot(override val token: String) : TelegramBot {
         user: ReadUser,
         message: String,
         replyMarkup: ReplyMarkup?
-    ) = BotSuccess(MESSAGE_SENT)
+    ) = messageSentTo(user, message)
 }

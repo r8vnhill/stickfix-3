@@ -33,6 +33,9 @@ import cl.ravenhill.stickfix.db.DatabaseService.Companion.API_TOKEN_KEY
  * @property apiToken
  *  The API token used for authentication. This token is stored and retrieved from the internal
  *  `_meta` map, simulating the behavior of secure token storage.
+ * @property meta
+ *  Provides a read-only view of the `_meta` map, allowing external access without modifying the
+ *  map. This is useful for debugging or inspection purposes.
  */
 class MapDatabaseService : DatabaseService {
 
@@ -56,10 +59,6 @@ class MapDatabaseService : DatabaseService {
             _meta[API_TOKEN_KEY] = value
         }
 
-    /**
-     * Provides a read-only view of the `_meta` map, allowing external access without modifying the
-     * map. This is useful for debugging or inspection purposes.
-     */
     val meta: Map<String, String> = _meta.toMap()
 
     /**
@@ -78,4 +77,17 @@ class MapDatabaseService : DatabaseService {
      * @return `ReadUser?` The user associated with the given ID, or `null` if no such user exists.
      */
     override fun getUser(user: ReadUser) = _users[user.userId]
+
+    /**
+     * Adds a user to the simulated user database.
+     *
+     * This method takes a `ReadUser` instance and adds it to the `_users` map. The user is added
+     * with their `userId` as the key. If a user with the same `userId` already exists in the map,
+     * it will be overwritten with the new user information.
+     *
+     * @param user The `ReadUser` instance to be added to the database.
+     */
+    override fun addUser(user: ReadUser) {
+        _users[user.userId] = user
+    }
 }

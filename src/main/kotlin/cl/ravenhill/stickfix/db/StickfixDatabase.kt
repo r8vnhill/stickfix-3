@@ -70,6 +70,10 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         TODO()
     }
 
+    override fun addUser(user: ReadUser) {
+        TODO("Not yet implemented")
+    }
+
     override fun toString() =
         "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
 

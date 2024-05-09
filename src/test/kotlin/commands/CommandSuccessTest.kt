@@ -7,6 +7,7 @@ package commands
 
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.commands.CommandSuccess
+import cl.ravenhill.stickfix.states.State
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -25,6 +26,8 @@ class CommandSuccessTest : FreeSpec(
                             get() = username.value
                         override val userId: Long
                             get() = userId
+                        override val state: State
+                            get() = TODO("Not yet implemented")
                     }
                     val commandSuccess = CommandSuccess(user, message)
                     commandSuccess.user shouldBe user
