@@ -48,7 +48,7 @@ data class RevokeState(override val context: ReadWriteUser) : State {
      * @return BotResult The result of processing the input, which could be a confirmation, rejection, or an invalid
      *   input response.
      */
-    override fun process(text: String?, bot: TelegramBot): BotResult {
+    override fun process(text: String?, bot: TelegramBot): BotResult<*> {
         super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
@@ -59,17 +59,17 @@ data class RevokeState(override val context: ReadWriteUser) : State {
     }
 
     // Handles the confirmation of revocation by deleting the user from the database and notifying them
-    private fun handleConfirmation(bot: TelegramBot): BotResult = transaction {
+    private fun handleConfirmation(bot: TelegramBot): BotResult<*> = transaction {
         Users.deleteWhere { id eq context.userId }
         logger.info("User ${context.username} has been revoked.")
         bot.sendMessage(context, "Your registration has been revoked.")
-        BotSuccess("Your registration has been revoked.")
+        BotSuccess("Your registration has been revoked.", true)
     }
 
     // Handles the rejection of revocation by notifying the user that their registration remains active
-    private fun handleRejection(bot: TelegramBot): BotResult {
+    private fun handleRejection(bot: TelegramBot): BotResult<*> {
         logger.info("User ${context.username} has chosen not to revoke.")
         bot.sendMessage(context, "Your registration has not been revoked.")
-        return BotSuccess("Your registration has not been revoked.")
+        return BotSuccess("Your registration has not been revoked.", true)
     }
 }

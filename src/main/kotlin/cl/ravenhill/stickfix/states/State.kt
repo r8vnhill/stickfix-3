@@ -78,9 +78,9 @@ sealed interface State {
      * @param bot A `TelegramBot` instance used to facilitate any bot interactions required by the process.
      * @return BotResult A result object, typically `BotSuccess`, indicating the completion of the processing.
      */
-    fun process(text: String?, bot: TelegramBot): BotResult {
+    fun process(text: String?, bot: TelegramBot): BotResult<*> {
         logger.debug("Processing input in state ${javaClass.simpleName}")
-        return BotSuccess("Processed input in state ${javaClass.simpleName}")
+        return BotSuccess("Processed input in state ${javaClass.simpleName}", true)
     }
 
     /**
@@ -122,7 +122,7 @@ sealed interface State {
  * @return BotResult The result of the message sending operation, indicating whether the message was
  *         successfully sent or if there was an error during the process.
  */
-fun handleInvalidInput(bot: TelegramBot, context: ReadUser): BotResult {
+fun handleInvalidInput(bot: TelegramBot, context: ReadUser): BotResult<*> {
     // Log a warning with the user's identification to trace the source of the invalid input
     logger.warn("Invalid input from user ${context.username.ifBlank { context.userId.toString() }}")
 
@@ -130,7 +130,10 @@ fun handleInvalidInput(bot: TelegramBot, context: ReadUser): BotResult {
     val message = "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
 
     // Send the clarifying message to the user and return the result of this operation
-    return bot.sendMessage(context, message)
+    return bot.sendMessage(context, message).fold(
+        { BotSuccess("Invalid input message sent", it) },
+        { BotFailure("Failed to send invalid input message", it) }
+    )
 }
 
 /**
@@ -161,14 +164,14 @@ fun handleInvalidInput(bot: TelegramBot, context: ReadUser): BotResult {
  *  Returns the original `BotResult` if the user's state was correctly updated, or a `BotFailure` if the state does not
  *  match the expected value.
  */
-fun verifyUserState(result: BotResult, expectedState: String, user: ReadUser): BotResult {
+fun verifyUserState(result: BotResult<*>, expectedState: String, user: ReadUser): BotResult<*> {
     // Proceed with verification only if the previous result was a success.
     if (result is BotSuccess) {
         // Check if the user's state in the database matches the expected state.
         val isCorrectState = Users.selectAll().where { Users.id eq user.userId }
             .single()[Users.state] == expectedState
         // Return a failure if the state was not updated as expected.
-        if (!isCorrectState) return BotFailure("User state was not updated")
+        if (!isCorrectState) return BotFailure("User state was not updated", false)
     }
     // Return the original result if the state was correctly updated, or if the initial operation was not a success.
     return result
@@ -198,12 +201,12 @@ fun verifyUserState(result: BotResult, expectedState: String, user: ReadUser): B
  *  Returns the original `BotResult` if the deletion was confirmed, or a `BotFailure` if the user was not successfully
  *  deleted.
  */
-fun verifyUserDeletion(result: BotResult, user: ReadUser): BotResult {
+fun verifyUserDeletion(result: BotResult<*>, user: ReadUser): BotResult<*> {
     // Check if the operation was initially successful.
     if (result is BotSuccess) {
         val exists = Users.selectAll().where { Users.id eq user.userId }.count() > 0
         // If the user still exists in the database, return a failure result.
-        if (exists) return BotFailure("User was not deleted")
+        if (exists) return BotFailure("User was not deleted", false)
     }
     // Return the original result if no issues were found.
     return result

@@ -10,6 +10,13 @@ group = "cl.ravenhill"
 version = libs.versions.stickfix
 
 repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/r8vnhill/strait-jakt")
+        credentials {
+            username = System.getenv("GITHUB_USER")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
     mavenCentral()
     maven { url = URI("https://jitpack.io") }
 }
@@ -25,12 +32,13 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
     implementation(libs.kotlinx.date.time)
-    implementation(libs.kotest.assertions.core)
-    implementation(libs.kotest.framework.engine)
-    implementation(libs.kotest.framework.datatest)
-    implementation(libs.kotest.property)
-    implementation(libs.kotest.runner.junit5)
-    implementation(libs.kotest.property.arbs)
+    implementation(libs.arrow.core)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.framework.engine)
+    testImplementation(libs.kotest.framework.datatest)
+    testImplementation(libs.kotest.property)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.property.arbs)
 }
 
 tasks.withType<DokkaTask>().configureEach {

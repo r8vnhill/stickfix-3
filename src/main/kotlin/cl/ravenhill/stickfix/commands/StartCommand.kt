@@ -59,7 +59,7 @@ private fun initMessage(user: ReadUser) = "Executing start command for user ${us
 data class StartCommand(
     override val user: ReadUser,
     override val bot: TelegramBot,
-    override val databaseService: DatabaseService
+    override val databaseService: DatabaseService,
 ) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -89,17 +89,13 @@ data class StartCommand(
      * Sends a welcome back message to the user.
      *
      * @param user The user to send the message to.
-     * @return
-     *  Returns a [CommandResult] object encapsulating the outcome of sending the message. Returns
-     *  [CommandSuccess] on successful message delivery, and [CommandFailure] if the message fails
-     *  to send.
+     * @return Returns a [CommandResult] object encapsulating the outcome of sending the message. Returns
+     *   [CommandSuccess] on successful message delivery, and [CommandFailure] if the message fails to send.
      */
-    private fun sendWelcomeBackMessage(user: ReadUser): CommandResult {
-        return when (bot.sendMessage(user, "Welcome back!")) {
-            is BotFailure -> CommandFailure(user, "Failed to send welcome back message.")
-            is BotSuccess -> CommandSuccess(user, "Welcome back message sent successfully.")
-        }
-    }
+    private fun sendWelcomeBackMessage(user: ReadUser) = bot.sendMessage(user, "Welcome back!").fold(
+        ifLeft = { CommandFailure(user, "Failed to send welcome back message.") },
+        ifRight = { CommandSuccess(user, "Welcome back message sent successfully.") }
+    )
 
     /**
      * Sends a registration prompt to a new user along with an inline keyboard for interaction.
@@ -114,9 +110,13 @@ data class StartCommand(
      */
     private fun sendRegistrationPrompt(user: ReadUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
-        bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup)
-        user.onStart(bot)
-        return CommandSuccess(user, "Registration prompt sent.")
+        return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
+            ifLeft = { CommandFailure(user, "Failed to send registration prompt.") },
+            ifRight = {
+                user.onStart(bot)
+                CommandSuccess(user, "Registration prompt sent.")
+            }
+        )
     }
 
 
@@ -133,7 +133,7 @@ data class StartCommand(
     }
 
     companion object {
-        const val NAME = "/start"
+        const val NAME = "start"
     }
 }
 

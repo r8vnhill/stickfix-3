@@ -12,7 +12,8 @@ kotlinx-date-time = "0.6.0"
 logback = "1.5.6"
 sl4j = "2.1.0-alpha1"
 system-lambda = "1.2.1"
-jakt = "1.5.0"
+jakt = "2.0.4"
+arrow = "2.0.0-alpha.3"
 
 [libraries]
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -35,7 +36,8 @@ kotlinx-date-time = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 sl4j = { module = "org.slf4j:slf4j-api", version.ref = "sl4j" }
 system-lambda = { module = "com.github.stefanbirkner:system-lambda", version.ref = "system-lambda" }
-jakt = { module = "cl.ravenhill:strait-jakt", version.ref = "jakt" }
+jakt = { module = "cl.ravenhill:jakt", version.ref = "jakt" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 
 [plugins]
 

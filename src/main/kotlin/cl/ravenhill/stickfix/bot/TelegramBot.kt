@@ -5,6 +5,8 @@
 
 package cl.ravenhill.stickfix.bot
 
+import arrow.core.Either
+import cl.ravenhill.stickfix.MessageSendingException
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
 import com.github.kotlintelegrambot.entities.ReplyMarkup
@@ -50,17 +52,21 @@ interface TelegramBot {
     fun start(): String
 
     /**
-     * Sends a message to a specified user through the Telegram bot. Optionally includes reply markup
-     * to offer interactive options to the user.
+     * Sends a message to a specified user through the Telegram bot. Optionally includes reply markup to offer
+     * interactive options to the user.
      *
      * @param user The `ReadUser` instance representing the recipient of the message.
      * @param message The text of the message to be sent.
-     * @param replyMarkup Optional `ReplyMarkup` providing interactive components such as inline
-     *                    keyboards. Default is null if no interactive components are needed.
-     * @return BotResult A result object indicating the success or failure of the send operation,
-     *                   typically containing a message detailing the operation's outcome.
+     * @param replyMarkup Optional `ReplyMarkup` providing interactive components such as inline keyboards. Default is
+     *   null if no interactive components are needed.
+     * @return Either<BotSuccess<String>, BotFailure<TelegramError>> An `Either` result indicating the success or
+     *   failure of the message sending operation.
      */
-    fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup? = null): BotResult
+    fun sendMessage(
+        user: ReadUser,
+        message: String,
+        replyMarkup: ReplyMarkup? = null,
+    ): Either<BotSuccess<String>, BotFailure<MessageSendingException>>
 
     companion object {
         /**
@@ -71,7 +77,7 @@ interface TelegramBot {
          * @return BotSuccess A `BotSuccess` result containing a descriptive success message.
          */
         fun messageSentTo(user: ReadUser, message: String) =
-            BotSuccess("Message sent to ${user.debugInfo}: $message")
+            Either.Left(BotSuccess("Message sent to ${user.debugInfo}", message))
 
         /**
          * Generates a failure result indicating that a message failed to be sent to a user.
@@ -82,7 +88,7 @@ interface TelegramBot {
          * @param message The message that failed to be sent.
          */
         fun failedToSendMessage(user: ReadUser, message: String) =
-            BotFailure("Failed to send message to ${user.debugInfo}: $message")
+            BotFailure("Failed to send message to ${user.debugInfo}", message)
     }
 }
 

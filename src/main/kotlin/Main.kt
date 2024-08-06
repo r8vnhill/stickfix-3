@@ -21,7 +21,7 @@ fun main() {
         val (databaseService, dbInitTime) = timed {
             initDatabase(StickfixDatabase(JDBC_URL, JDBC_DRIVER))
         }
-        logger.info("Database initialized in ${dbInitTime}")
+        logger.info("Database initialized in $dbInitTime")
         val (bot, botSetupTime) = timed {
             StickfixBot(databaseService)
         }

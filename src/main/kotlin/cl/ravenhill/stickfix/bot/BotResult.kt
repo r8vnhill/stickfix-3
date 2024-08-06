@@ -6,48 +6,81 @@
 package cl.ravenhill.stickfix.bot
 
 /**
- * Represents the outcome of a bot operation, encapsulated within a sealed interface to ensure
- * all potential results are comprehensively covered. This design allows for exhaustive when
- * expression checks without needing an else clause, facilitating safer and more predictable error
- * handling and success messaging.
+ * Represents the result of a bot operation, encapsulating both a message and associated data. This sealed interface
+ * allows for the differentiation between successful and failed operations by providing specific implementations for
+ * each case. The generic type `T` allows the result to carry any type of data, providing flexibility for various use
+ * cases.
  *
  * ## Usage:
- * Use this sealed interface in functions or processes where bot operations return varied results
- * that need clear categorization as success or failure. Each implementation carries a message that
- * describes the result, providing direct feedback or action details.
+ * Use this interface and its implementations to standardize the results returned from bot operations, ensuring that
+ * each result includes a message and relevant data. This approach facilitates consistent error handling and success
+ * reporting across the application.
  *
  * ### Example 1: Handling Bot Results
  * ```kotlin
- * fun handleBotOperation(result: BotResult) {
+ * fun handleBotResult(result: BotResult<Any>) {
  *     when (result) {
- *         is BotSuccess -> println("Success: ${result.message}")
- *         is BotFailure -> println("Error: ${result.message}")
+ *         is BotSuccess -> println("Success: ${result.message} with data: ${result.data}")
+ *         is BotFailure -> println("Failure: ${result.message} with data: ${result.data}")
  *     }
  * }
  * ```
  *
- * @property message
- *  A string that contains a detailed message describing the outcome of the bot operation. This can
- *  include success confirmations, error messages, or other operational feedback.
+ * @param T The type of data associated with the bot result.
+ * @property message A string message describing the outcome of the operation.
+ * @property data The data associated with the operation's result, providing additional context or information relevant
+ *   to the outcome.
  */
-sealed interface BotResult {
+sealed interface BotResult<T> {
     val message: String
+    val data: T
 }
 
 /**
- * Represents a successful outcome of a bot operation, containing a message that likely describes
- * the successful execution or results.
+ * Represents a successful result from a bot operation. This class provides a message describing the success and any
+ * associated data.
  *
- * @param message The message describing the specifics of the success. This could detail the actions
- * taken or the data processed by the bot.
+ * ## Usage:
+ * Use this class to represent successful outcomes from bot operations, ensuring that both a descriptive message and
+ * relevant data are returned.
+ *
+ * ### Example 1: Creating a BotSuccess Result
+ * ```kotlin
+ * val successResult = BotSuccess("Operation completed successfully", data)
+ * println(successResult.message)  // Outputs: "Operation completed successfully"
+ * println(successResult.data)     // Outputs: data
+ * ```
+ *
+ * @param T The type of data associated with the bot result.
+ * @property message A string message describing the successful outcome.
+ * @property data The data associated with the successful operation's result.
  */
-data class BotSuccess(override val message: String) : BotResult
+data class BotSuccess<T>(
+    override val message: String,
+    override val data: T
+) : BotResult<T>
 
 /**
- * Represents a failure in a bot operation, containing a message that explains the nature of the
- * failure. This can assist in debugging or informing the user of what went wrong.
+ * Represents a failed result from a bot operation. This class provides a message describing the failure and any
+ * associated data that might help in diagnosing the issue.
  *
- * @param message The message detailing the failure, which could include error details or why the
- * operation could not be completed successfully.
+ * ## Usage:
+ * Use this class to represent failed outcomes from bot operations, ensuring that both a descriptive message and
+ * relevant data are returned.
+ *
+ * ### Example 1: Creating a BotFailure Result
+ * ```kotlin
+ * val failureResult = BotFailure("Operation failed due to an error", errorData)
+ * println(failureResult.message)  // Outputs: "Operation failed due to an error"
+ * println(failureResult.data)     // Outputs: errorData
+ * ```
+ *
+ * @param T The type of data associated with the bot result.
+ * @property message A string message describing the failure.
+ * @property data The data associated with the failed operation's result, which might include error details or
+ *   additional context for the failure.
  */
-data class BotFailure(override val message: String) : BotResult
+data class BotFailure<T>(
+    override val message: String,
+    override val data: T
+) : BotResult<T>

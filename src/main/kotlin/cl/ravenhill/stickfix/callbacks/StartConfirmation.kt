@@ -5,9 +5,7 @@
 
 package cl.ravenhill.stickfix.callbacks
 
-import cl.ravenhill.stickfix.bot.BotFailure
 import cl.ravenhill.stickfix.bot.BotResult
-import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
@@ -38,7 +36,7 @@ private const val ALREADY_REGISTERED_MESSAGE = "You are already registered!"
  *  A formatted string suitable for logging, which includes the user's identifier and the error
  *  message.
  */
-private fun errorSendingMessageLog(user: ReadUser, result: BotResult) =
+private fun errorSendingMessageLog(user: ReadUser, result: BotResult<*>) =
     "Failed to send message to ${user.debugInfo}: ${result.message}"
 
 /**
@@ -96,10 +94,6 @@ private fun registeringUserLog(user: ReadUser) = "Registering new user: ${user.d
  *     }
  * }
  * ```
- *
- * @property debugInfo
- *   Provides a concise string representation of `ReadUser`, useful for logging and debugging purposes.
- *   This extension property on `ReadUser` returns the username if available, or the user ID otherwise.
  */
 sealed class StartConfirmation : CallbackQueryHandler() {
 
@@ -114,19 +108,14 @@ sealed class StartConfirmation : CallbackQueryHandler() {
      * @return CallbackResult Either `CallbackSuccess` if the message is sent successfully, or
      *  `CallbackFailure` if the message fails to send, encapsulating the error message.
      */
-    protected fun sendMessage(bot: TelegramBot, user: ReadUser, message: String): CallbackResult {
-        return when (val result = bot.sendMessage(user, message)) {
-            is BotFailure -> {
-                logger.error(errorSendingMessageLog(user, result))
-                CallbackFailure(result.message)
+    protected fun sendMessage(bot: TelegramBot, user: ReadUser, message: String) =
+        bot.sendMessage(user, message).fold(
+            { CallbackSuccess(message) },
+            { error ->
+                logger.error(errorSendingMessageLog(user, error))
+                CallbackFailure(error.message)
             }
-
-            is BotSuccess -> {
-                logger.info(successSendingMessageLog(user))
-                CallbackSuccess(result.message)
-            }
-        }
-    }
+        )
 }
 
 
@@ -171,7 +160,7 @@ data object StartConfirmationYes : StartConfirmation() {
     override fun invoke(
         user: ReadUser,
         bot: TelegramBot,
-        dbService: DatabaseService
+        dbService: DatabaseService,
     ): CallbackResult {
         // Retrieve user from database or register new user if not found
         val registeredUser = dbService.getUser(user)
@@ -228,7 +217,7 @@ data object StartConfirmationNo : StartConfirmation() {
     override fun invoke(
         user: ReadUser,
         bot: TelegramBot,
-        dbService: DatabaseService
+        dbService: DatabaseService,
     ): CallbackResult {
         val logMessage = "User ${user.debugInfo} chose not to register."
         logger.info(logMessage)

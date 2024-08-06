@@ -6,12 +6,16 @@
 package cl.ravenhill.stickfix.db
 
 import cl.ravenhill.stickfix.chat.ReadUser
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
+import cl.ravenhill.stickfix.db.schema.Users
+import cl.ravenhill.stickfix.states.IdleState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.util.*
 
 /**
@@ -46,7 +50,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     override fun init(): DatabaseService {
         database = Database.connect(jdbcUrl, driverName)
         transaction(database) {
-            SchemaUtils.create(Meta)
+            SchemaUtils.create(Meta, Users)
         }
         return this
     }
@@ -63,19 +67,30 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
         set(value) {
             transaction(database) {
-                Meta.insert { row ->
+                Meta.update { row ->
                     row[key] = "API_KEY"
                     row[Meta.value] = value
                 }
             }
         }
 
-    override fun getUser(user: ReadUser): ReadUser? {
-        TODO()
+    override fun getUser(user: ReadUser): ReadUser? = transaction(database) {
+        val result = Users.selectAll().where { Users.id eq user.userId }
+        if (result.count() == 0L) {
+            null
+        } else {
+            StickfixUser.from(result.single())
+        }
     }
 
     override fun addUser(user: ReadUser) {
-        TODO("Not yet implemented")
+        transaction(database) {
+            Users.insert {
+                it[chatId] = user.userId  // Assigns the user's ID to the chatId column.
+                it[username] = user.username  // Sets the username field.
+                it[state] = IdleState::class.simpleName!!  // Initializes the state to 'Idle'.
+            }
+        }
     }
 
     override fun toString() =

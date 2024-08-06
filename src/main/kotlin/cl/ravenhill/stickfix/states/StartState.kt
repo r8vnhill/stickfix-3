@@ -44,7 +44,7 @@ data class StartState(override val context: ReadWriteUser) : State {
      * @return A `BotResult` indicating the outcome of the processing, including any state transitions or
      * necessary messages sent to the user.
      */
-    override fun process(text: String?, bot: TelegramBot): BotResult {
+    override fun process(text: String?, bot: TelegramBot): BotResult<*> {
         super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
@@ -54,23 +54,35 @@ data class StartState(override val context: ReadWriteUser) : State {
         }
     }
 
-    private fun handleConfirmation(bot: TelegramBot): BotResult = transaction {
+    private fun handleConfirmation(bot: TelegramBot): BotResult<*> = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
         val message = "You were successfully registered!"
         bot.sendMessage(context, message).also {
             context.onIdle(bot)
-            verifyUserState(it, IdleState::class.simpleName!!, context)
-        }
+            verifyUserState(it.fold(
+                { result -> result },
+                { error -> throw error.data }
+            ), IdleState::class.simpleName!!, context)
+        }.fold(
+            { it },
+            { throw it.data }
+        )
     }
 
-    private fun handleRejection(bot: TelegramBot): BotResult = transaction {
+    private fun handleRejection(bot: TelegramBot): BotResult<*> = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
         val message = "You were not registered."
         bot.sendMessage(context, message).also {
             Users.deleteWhere { id eq context.userId }
             context.onIdle(bot)
-            verifyUserDeletion(it, context)
-        }
+            verifyUserDeletion(it.fold(
+                { result -> result },
+                { error -> throw error.data }
+            ), context)
+        }.fold(
+            { it },
+            { throw it.data }
+        )
     }
 
     override fun toString() = this::class.simpleName!!
