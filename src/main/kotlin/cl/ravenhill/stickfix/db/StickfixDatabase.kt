@@ -63,7 +63,10 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
         set(value) {
             transaction(database) {
-                Meta.insert { it[key] = value }
+                Meta.insert { row ->
+                    row[key] = "API_KEY"
+                    row[Meta.value] = value
+                }
             }
         }
 

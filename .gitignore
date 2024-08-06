@@ -101,3 +101,4 @@ $RECYCLE.BIN/            # Ignore recycle bin
 buildSrc/build
 build
 .kotlin
+*.log

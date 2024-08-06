@@ -24,7 +24,6 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.java.time)
     implementation(libs.kotlinx.date.time)
     implementation(libs.kotest.assertions.core)
     implementation(libs.kotest.framework.engine)

@@ -7,6 +7,7 @@ package cl.ravenhill.stickfix.bot
 
 import cl.ravenhill.stickfix.bot.TelegramBot.Companion.messageSentTo
 import cl.ravenhill.stickfix.chat.ReadUser
+import cl.ravenhill.stickfix.db.DatabaseService
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 
 /**
@@ -36,7 +37,7 @@ private const val BOT_STARTED = "Bot started"
  * @property started A private boolean property indicating whether the bot has already been started
  *  to prevent multiple starts.
  */
-class LocalBot(override val token: String) : TelegramBot {
+class LocalBot(override val databaseService: DatabaseService) : TelegramBot {
     /**
      * Represents the status of whether the bot has been started.
      */

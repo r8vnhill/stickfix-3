@@ -8,10 +8,21 @@ package cl.ravenhill.stickfix.bot
 import cl.ravenhill.stickfix.bot.TelegramBot.Companion.failedToSendMessage
 import cl.ravenhill.stickfix.bot.TelegramBot.Companion.messageSentTo
 import cl.ravenhill.stickfix.chat.ReadUser
+import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.commands.CommandFailure
+import cl.ravenhill.stickfix.commands.CommandSuccess
+import cl.ravenhill.stickfix.commands.StartCommand
+import cl.ravenhill.stickfix.db.DatabaseService
+import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
+import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.ReplyMarkup
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("StickfixBot")
 
 /**
  * Implements the `TelegramBot` interface to provide specific functionalities for the Stickfix bot.
@@ -31,7 +42,7 @@ import com.github.kotlintelegrambot.entities.ReplyMarkup
  *
  * @property token The authentication token used for the Telegram API.
  */
-class StickfixBot(override val token: String) : TelegramBot {
+class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
     /**
      * Tracks whether the bot has been started.
      */
@@ -42,7 +53,8 @@ class StickfixBot(override val token: String) : TelegramBot {
      * to interface directly with the Telegram API.
      */
     private val _bot = bot {
-        this@bot.token = this@StickfixBot.token
+        this@bot.token = databaseService.apiToken
+        registerCommands(databaseService, this@StickfixBot)
     }
 
     /**
@@ -84,3 +96,18 @@ class StickfixBot(override val token: String) : TelegramBot {
         ifSuccess = { messageSentTo(user, message) }
     )
 }
+
+context(Bot.Builder)
+private fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
+    dispatch {
+        command(StartCommand.NAME) {
+            when (val result =
+                StartCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()
+            ) {
+                is CommandSuccess -> logger.info("Start command executed successfully: $result")
+                is CommandFailure -> logger.error("Start command failed: $result")
+            }
+        }
+    }
+}
+

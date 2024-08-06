@@ -10,6 +10,7 @@ import cl.ravenhill.stickfix.BeNull
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.RevokeState
+import cl.ravenhill.stickfix.states.StartState
 import cl.ravenhill.stickfix.states.State
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.transactions.transaction

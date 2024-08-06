@@ -6,6 +6,7 @@
 package cl.ravenhill.stickfix.bot
 
 import cl.ravenhill.stickfix.chat.ReadUser
+import cl.ravenhill.stickfix.db.DatabaseService
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 
 /**
@@ -33,13 +34,11 @@ import com.github.kotlintelegrambot.entities.ReplyMarkup
  * }
  * ```
  *
- * @property token
- *  A string representing the authentication token for the Telegram bot. This token is crucial for
- *  making authenticated requests to the Telegram Bot API and must be securely managed by the
- *  implementing class.
+ * @property databaseService The database service used by the bot to interact with the database. This service is used to
+ *   store and retrieve data related to the bot's operations.
  */
 interface TelegramBot {
-    val token: String
+    val databaseService: DatabaseService
 
     /**
      * Initiates the bot's primary operations necessary for it to start functioning. This includes

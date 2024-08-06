@@ -3,30 +3,31 @@
  * 2-Clause BSD License.
  */
 
-import cl.ravenhill.stickfix.bot.LocalBot
-import cl.ravenhill.stickfix.bot.TelegramBot
-import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.commands.StartCommand
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.db.DatabaseService
-import cl.ravenhill.stickfix.db.MapDatabaseService
-import com.github.kotlintelegrambot.Bot
-import com.github.kotlintelegrambot.dispatch
-import com.github.kotlintelegrambot.dispatcher.command
+import cl.ravenhill.stickfix.db.StickfixDatabase
 import org.slf4j.LoggerFactory
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.TimedValue
-import kotlin.time.measureTimedValue
+import kotlin.time.TimeSource
 
 private val logger = LoggerFactory.getLogger("Main")
+private const val JDBC_URL = "jdbc:h2:file:./build/stickfix"
+private const val JDBC_DRIVER = "org.h2.Driver"
 
 @OptIn(ExperimentalTime::class)
 fun main() {
-    val (databaseService, databaseInitTime) = initDatabase(MapDatabaseService())
-    logger.info("Database initialized in $databaseInitTime")
-    val bot = measureTimedValue {
-        LocalBot(databaseService.apiToken)
+    with(TimeSource.Monotonic) {
+        val (databaseService, dbInitTime) = timed {
+            initDatabase(StickfixDatabase(JDBC_URL, JDBC_DRIVER))
+        }
+        logger.info("Database initialized in ${dbInitTime}")
+        val (bot, botSetupTime) = timed {
+            StickfixBot(databaseService)
+        }
+        logger.info("Bot setup in ${botSetupTime/8}")
+        logger.info(bot.start())
     }
-    logger.info("Bot setup in ${bot.duration}")
 }
 
 /**
@@ -40,15 +41,24 @@ fun main() {
  *  A `TimedValue<DatabaseService>` containing the initialized database service and the time taken
  *  to initialize it, facilitating performance analysis.
  */
-@OptIn(ExperimentalTime::class)
-private fun initDatabase(db: DatabaseService): TimedValue<DatabaseService> {
+private fun initDatabase(db: DatabaseService): DatabaseService {
     logger.info("Initializing database")
-    return measureTimedValue {
-        db.init()
-    }
+    return db.init()
 }
 
-context(Bot.Builder)
-fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
-
+/**
+ * Executes a block of code and measures the time it takes to complete, using a `TimeSource` context. This function is
+ * useful for performance monitoring and logging, providing both the result of the block and the duration it took to
+ * execute.
+ *
+ * @param block The block of code to be executed and timed.
+ * @return Pair<T, Duration> A pair containing the result of the block execution and the duration it took to execute.
+ */
+context(TimeSource)
+@OptIn(ExperimentalTime::class)
+private fun <T> timed(block: () -> T): Pair<T, Long> {
+    val start = System.currentTimeMillis()
+    val result = block()
+    val end = System.currentTimeMillis()
+    return result to (end - start)
 }
