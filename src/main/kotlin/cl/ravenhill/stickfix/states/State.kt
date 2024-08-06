@@ -94,6 +94,13 @@ sealed interface State {
         context.state = IdleState(context)
         return TransitionSuccess(context.state)
     }
+
+    fun onRevoke(bot: TelegramBot): TransitionResult {
+        logger.warn(
+            "User ${context.username.ifBlank { context.userId }} tried to revoke from state ${javaClass.simpleName}"
+        )
+        return TransitionFailure(this)
+    }
 }
 
 /**

@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.chat
 import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.states.IdleState
+import cl.ravenhill.stickfix.states.RevokeState
 import cl.ravenhill.stickfix.states.State
 import cl.ravenhill.stickfix.states.TransitionResult
 import com.github.kotlintelegrambot.Bot
@@ -91,5 +92,14 @@ interface ReadUser {
             }
         }
         return state.onIdle(bot)
+    }
+
+    fun onRevoke(bot: TelegramBot): TransitionResult {
+        transaction {
+            Users.update({ Users.id eq userId }) {
+                it[state] = RevokeState::class.simpleName!!
+            }
+        }
+        return state.onRevoke(bot)
     }
 }

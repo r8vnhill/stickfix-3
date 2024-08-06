@@ -10,17 +10,23 @@ import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
 import cl.ravenhill.stickfix.MessageSendingException
+import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
+import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
+import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
+import cl.ravenhill.stickfix.commands.RevokeCommand
 import cl.ravenhill.stickfix.commands.StartCommand
 import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.schema.Meta
+import cl.ravenhill.stickfix.db.schema.Users
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.entities.ChatId
@@ -114,18 +120,69 @@ class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
 context(Bot.Builder)
 private fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
     dispatch {
-        callbackQuery(StartConfirmationYes.name) {
-            val user = StickfixUser.from(callbackQuery.from)
-            StartConfirmationYes(user, bot, databaseService)
+        registerStartCommand(databaseService, bot)
+        registerRevokeCommand(databaseService, bot)
+        registerStartConfirmationYes(databaseService, bot)
+        registerStartConfirmationNo(databaseService, bot)
+        registerRevokeConfirmationYes(databaseService, bot)
+        registerRevokeConfirmationNo(databaseService, bot)
+    }
+}
+
+context(Dispatcher)
+private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: TelegramBot) {
+    callbackQuery(StartConfirmationYes.name) {
+        val user = StickfixUser.from(callbackQuery.from)
+        StartConfirmationYes(user, bot, databaseService)
+    }
+}
+
+context(Dispatcher)
+private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: TelegramBot) {
+    callbackQuery(StartConfirmationNo.name) {
+        val user = StickfixUser.from(callbackQuery.from)
+        StartConfirmationNo(user, bot, databaseService)
+    }
+}
+
+context(Dispatcher)
+private fun registerRevokeConfirmationYes(databaseService: DatabaseService, bot: TelegramBot) {
+    callbackQuery(RevokeConfirmationYes.name) {
+        val user = transaction {
+            StickfixUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
         }
-        command(StartCommand.NAME) {
-            logger.info("Received start command from ${message.from}")
-            when (val result =
-                StartCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()
-            ) {
-                is CommandSuccess -> logger.info("Start command executed successfully: $result")
-                is CommandFailure -> logger.error("Start command failed: $result")
-            }
+        RevokeConfirmationYes.invoke(user, StickfixBot(databaseService), databaseService)
+    }
+}
+
+context(Dispatcher)
+private fun registerRevokeConfirmationNo(databaseService: DatabaseService, bot: TelegramBot) {
+    callbackQuery(RevokeConfirmationNo.name) {
+        val user = transaction {
+            StickfixUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
+        }
+        RevokeConfirmationNo.invoke(user, StickfixBot(databaseService), databaseService)
+    }
+}
+
+context(Dispatcher)
+private fun registerStartCommand(databaseService: DatabaseService, bot: TelegramBot) {
+    command(StartCommand.NAME) {
+        logger.info("Received start command from ${message.from}")
+        when (val result = StartCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
+            is CommandSuccess -> logger.info("Start command executed successfully: $result")
+            is CommandFailure -> logger.error("Start command failed: $result")
+        }
+    }
+}
+
+context(Dispatcher)
+private fun registerRevokeCommand(databaseService: DatabaseService, bot: TelegramBot) {
+    command(RevokeCommand.NAME) {
+        logger.info("Received revoke command from ${message.from}")
+        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
+            is CommandSuccess -> logger.info("Revoke command executed successfully: $result")
+            is CommandFailure -> logger.error("Revoke command failed: $result")
         }
     }
 }

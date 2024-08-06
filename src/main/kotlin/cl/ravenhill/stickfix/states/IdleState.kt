@@ -14,6 +14,12 @@ class IdleState(override val context: ReadWriteUser) : State {
     }
 
     override fun onStart(bot: TelegramBot): TransitionResult {
-        TODO()
+        context.state = StartState(context)  // Transition the user to the StartState
+        return TransitionSuccess(context.state)
+    }
+
+    override fun onRevoke(bot: TelegramBot): TransitionResult {
+        context.state = RevokeState(context)
+        return TransitionSuccess(context.state)
     }
 }
