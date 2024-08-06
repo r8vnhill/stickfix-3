@@ -11,6 +11,9 @@ import cl.ravenhill.stickfix.db.schema.Meta.primaryKey
 import cl.ravenhill.stickfix.db.schema.Meta.value
 import org.jetbrains.exposed.dao.id.IdTable
 
+private const val MAX_KEY_LENGTH = 50
+private const val MAX_VALUE_LENGTH = 50
+
 /**
  * Represents a database table for metadata storage using an `IdTable` with a String-based
  * identifier. This table is designed to store metadata as key-value pairs, where each key is unique
@@ -29,8 +32,8 @@ import org.jetbrains.exposed.dao.id.IdTable
  *  "PK_MetaKey".
  */
 object Meta : IdTable<String>() {
-    val key = varchar("key", 50)  // Column for the metadata key
-    val value = varchar("value", 50)  // Column for the metadata value
+    val key = varchar("key", MAX_KEY_LENGTH)  // Column for the metadata key
+    val value = varchar("value", MAX_VALUE_LENGTH)  // Column for the metadata value
     override val id = key.entityId()
     override val primaryKey = PrimaryKey(key, name = "PK_MetaKey")  // Primary key definition
 }

@@ -34,7 +34,8 @@ import java.util.*
 class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) :
     DatabaseService {
 
-    private lateinit var database: Database
+    override lateinit var database: Database
+        private set
 
     /**
      * Initializes the database connection using the provided JDBC URL and driver name.

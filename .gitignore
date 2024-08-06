@@ -96,4 +96,8 @@ $RECYCLE.BIN/            # Ignore recycle bin
 *.msi                    # Ignore Microsoft installer files
 *.msix                   # Ignore Microsoft installer files (newer format)
 *.ms
-
+.gradle
+.idea
+buildSrc/build
+build
+.kotlin

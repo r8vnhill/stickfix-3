@@ -6,8 +6,13 @@
 package cl.ravenhill.stickfix.chat
 
 import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.db.schema.Users
+import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.State
 import cl.ravenhill.stickfix.states.TransitionResult
+import com.github.kotlintelegrambot.Bot
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 /**
  * Defines a minimal set of user information necessary for reading purposes within applications.
@@ -69,4 +74,22 @@ interface ReadUser {
      * ```
      */
     val debugInfo: String get() = username.ifBlank { userId.toString() }
+
+    /**
+     * Manages the transition of this user to an idle state. This method is called when the user's interaction is
+     * minimized or deemed inactive, requiring updates to their record in the database to reflect this new state.
+     *
+     * @param bot The bot instance currently managing user interactions.
+     * @return
+     *  `TransitionResult` - The outcome of the idle transition, typically indicating the successful update of the
+     *  user's state.
+     */
+    fun onIdle(bot: TelegramBot): TransitionResult {
+        transaction {
+            Users.update({ Users.id eq userId }) {
+                it[state] = IdleState::class.simpleName!!
+            }
+        }
+        return state.onIdle(bot)
+    }
 }

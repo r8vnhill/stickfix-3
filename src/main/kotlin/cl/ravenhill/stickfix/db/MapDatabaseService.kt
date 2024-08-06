@@ -7,6 +7,7 @@ package cl.ravenhill.stickfix.db
 
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService.Companion.API_TOKEN_KEY
+import org.jetbrains.exposed.sql.Database
 
 /**
  * Implements the `DatabaseService` interface using an in-memory map to simulate a database. This
@@ -38,14 +39,14 @@ import cl.ravenhill.stickfix.db.DatabaseService.Companion.API_TOKEN_KEY
  *  map. This is useful for debugging or inspection purposes.
  */
 class MapDatabaseService : DatabaseService {
+    override lateinit var database: Database
+        private set
 
     /**
      * A mutable map that simulates a database by storing key-value pairs. Initially used to store
      * API tokens and can be extended to store other types of metadata.
      */
-    private val _meta = mutableMapOf<String, String>(
-        API_TOKEN_KEY to ""
-    )
+    private val _meta = mutableMapOf(API_TOKEN_KEY to "")
 
     /**
      * A mutable map that simulates a user database by storing `ReadUser` instances against their

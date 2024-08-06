@@ -5,8 +5,13 @@
 
 import cl.ravenhill.stickfix.bot.LocalBot
 import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.commands.StartCommand
 import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.MapDatabaseService
+import com.github.kotlintelegrambot.Bot
+import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.command
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimedValue
@@ -43,7 +48,7 @@ private fun initDatabase(db: DatabaseService): TimedValue<DatabaseService> {
     }
 }
 
-context(TelegramBot)
+context(Bot.Builder)
 fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
 
 }

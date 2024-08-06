@@ -131,5 +131,9 @@ data class StartCommand(
         val row = listOf(yesButton, noButton)
         return InlineKeyboardMarkup.createSingleRowKeyboard(row)
     }
+
+    companion object {
+        const val NAME = "/start"
+    }
 }
 

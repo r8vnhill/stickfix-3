@@ -6,6 +6,7 @@
 package cl.ravenhill.stickfix.db
 
 import cl.ravenhill.stickfix.chat.ReadUser
+import org.jetbrains.exposed.sql.Database
 
 /**
  * Defines the interface for interacting with a database, specifying the essential operations
@@ -40,10 +41,14 @@ import cl.ravenhill.stickfix.chat.ReadUser
  * ```
  *
  * @property apiToken
- *  The API token used for authenticating and authorizing interactions with external services or
- *  databases. This key is essential for operations that require secure access.
+ *   The API token used for authenticating and authorizing interactions with external services or
+ *   databases. This key is essential for operations that require secure access.
+ * @property database
+ *   The database instance used for executing queries and operations.
  */
 interface DatabaseService {
+
+    val database: Database
 
     var apiToken: String
 
@@ -61,7 +66,8 @@ interface DatabaseService {
      * val myService = MyDatabaseService().init()
      * ```
      *
-     * @return DatabaseService An instance of the service, often itself, to facilitate method chaining or further configurations.
+     * @return DatabaseService An instance of the service, often itself, to facilitate method chaining or further
+     *   configurations.
      */
     fun init(): DatabaseService
 
