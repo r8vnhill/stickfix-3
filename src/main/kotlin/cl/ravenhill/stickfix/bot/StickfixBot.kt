@@ -126,7 +126,7 @@ private fun registerCommands(databaseService: StickfixDatabase, bot: StickfixBot
         registerStartConfirmationYes(databaseService, bot)
         registerStartConfirmationNo(databaseService, bot)
         registerRevokeConfirmationYes(databaseService)
-        registerRevokeConfirmationNo(databaseService, bot)
+        registerRevokeConfirmationNo(databaseService)
         // endregion
     }
 }

@@ -1,18 +1,16 @@
 package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
+import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.db.schema.Users
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
-import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
-import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
-import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
  * Represents the command to revoke the Stickfix bot for a user. This command handles checking if the user exists in the
@@ -29,7 +27,7 @@ import cl.ravenhill.stickfix.db.StickfixDatabase
 data class RevokeCommand(
     override val user: ReadUser,
     override val bot: StickfixBot,
-    override val databaseService: StickfixDatabase
+    override val databaseService: StickfixDatabase,
 ) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 
