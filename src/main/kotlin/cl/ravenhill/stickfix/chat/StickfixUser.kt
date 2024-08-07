@@ -6,7 +6,7 @@
 package cl.ravenhill.stickfix.chat
 
 import cl.ravenhill.jakt.Jakt.constraints
-import cl.ravenhill.stickfix.BeNull
+import cl.ravenhill.jakt.constraints.BeNull
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.RevokeState

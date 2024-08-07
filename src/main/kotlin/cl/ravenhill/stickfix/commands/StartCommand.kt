@@ -51,14 +51,8 @@ private fun initMessage(user: ReadUser) = "Executing start command for user ${us
  *   basic user information like username and user ID.
  * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows the command to
  *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
- * @property databaseService The `StickfixDatabase` instance used to interact with the database. This allows the command
- *   to perform necessary database operations as part of its execution.
  */
-data class StartCommand(
-    override val user: ReadUser,
-    override val bot: StickfixBot,
-    override val databaseService: StickfixDatabase,
-) : Command {
+data class StartCommand(override val user: ReadUser, override val bot: StickfixBot) : Command {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     /**
@@ -70,12 +64,10 @@ data class StartCommand(
      */
     override fun execute(): CommandResult {
         info(logger) { initMessage(user) }
-        val registeredUser = databaseService.getUser(user)
-        val result = if (registeredUser.data != null) {
-            sendWelcomeBackMessage(user)
-        } else {
-            sendRegistrationPrompt(user)
-        }
+        val result = bot.databaseService.getUser(user).fold(
+            ifLeft = { sendWelcomeBackMessage(user) },
+            ifRight = { sendRegistrationPrompt(user) }
+        )
         info(logger) { "Start command result: $result" }
         return result
     }

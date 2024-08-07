@@ -38,14 +38,8 @@ sealed class CallbackQueryHandler {
      * @param bot The `StickfixBot` instance representing the bot that processes the callback query. This allows the
      *   handler to interact with the bot's functionalities, such as sending messages or performing actions on behalf of
      *   the user.
-     * @param databaseService The `StickfixDatabase` instance used to interact with the database. This allows the
-     *   handler to perform necessary database operations as part of handling the callback query.
      * @return CallbackResult The result of handling the callback query, indicating success or failure along with any
      *   relevant messages or data.
      */
-    abstract operator fun invoke(
-        user: ReadUser,
-        bot: StickfixBot,
-        databaseService: StickfixDatabase
-    ): CallbackResult
+    abstract operator fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult
 }

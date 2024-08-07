@@ -10,7 +10,8 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.db.StickfixDatabase
+import cl.ravenhill.stickfix.error
+import cl.ravenhill.stickfix.info
 
 /**
  * A constant representing the welcome message sent to users when they successfully register  with
@@ -96,25 +97,24 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      *
      * @param user A `ReadUser` instance representing the user interacting with the bot.
      * @param bot A `StickfixBot` instance used to send messages back to the user.
-     * @param databaseService A `StickfixDatabase` instance for accessing and updating user registration information.
      * @return CallbackResult The result of the operation, indicating whether the process was successful or if the user
      *   was already registered, with appropriate messages delivered via the bot.
      */
     override fun invoke(
         user: ReadUser,
         bot: StickfixBot,
-        databaseService: StickfixDatabase,
     ): CallbackResult {
+        val databaseService = bot.databaseService
         return databaseService.getUser(user).fold(
             ifLeft = { error ->
-                logger.error("Failed to retrieve user data for ${user.debugInfo}: ${error.message}")
-                logger.info(registeringUserLog(user))
+                error(logger) { "Failed to retrieve user data for ${user.debugInfo}: ${error.message}" }
+                info(logger) { registeringUserLog(user) }
                 databaseService.addUser(user)
                 val message = WELCOME_MESSAGE
                 sendMessage(bot, user, message)
             },
             ifRight = { userResult ->
-                logger.info("Retrieved user data for ${user.debugInfo}: ${userResult.data}")
+                info(logger) { "Retrieved user data for ${user.debugInfo}: ${userResult.data}" }
                 sendMessage(bot, user, ALREADY_REGISTERED_MESSAGE)
             }
         )
@@ -137,23 +137,18 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      *
      * @param user A `ReadUser` instance representing the user interacting with the bot.
      * @param bot A `StickfixBot` instance used to send messages back to the user.
-     * @param databaseService A `StickfixDatabase` instance for accessing and updating user registration information.
      * @return CallbackResult The result of the operation, indicating the user's choice not to register, with
      *   appropriate messages delivered via the bot.
      */
-    override fun invoke(
-        user: ReadUser,
-        bot: StickfixBot,
-        databaseService: StickfixDatabase,
-    ): CallbackResult {
+    override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
         val logMessage = "User ${user.debugInfo} chose not to register."
-        logger.info(logMessage)
+        info(logger) { logMessage }
         val message = "You have chosen not to register. Remember you can always register later!"
 
         return sendMessage(bot, user, message).also {
             if (it is CallbackSuccess) {
                 // Log successful confirmation of the action to provide clear audit trails
-                logger.info(logMessage) // Repeat log only on success to confirm action
+                info(logger) { logMessage } // Repeat log only on success to confirm action
             }
         }
     }

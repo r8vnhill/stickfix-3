@@ -5,6 +5,8 @@ import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
+import cl.ravenhill.stickfix.error
+import cl.ravenhill.stickfix.info
 import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
@@ -29,19 +31,18 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
      *
      * @param user The `ReadUser` instance representing the user who confirmed the revocation.
      * @param bot The `StickfixBot` instance used to send messages to the user.
-     * @param databaseService The `StickfixDatabase` instance for accessing and updating user data.
      * @return CallbackResult The result of the revocation confirmation, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot, databaseService: StickfixDatabase) = transaction {
-        databaseService.deleteUser(user)
-        logger.info("User ${user.username} has been revoked.")
-        bot.sendMessage(user, "Your registration has been revoked.").fold(
+    override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
+        bot.databaseService.deleteUser(user)
+        info(logger) { "User ${user.username} has been revoked." }
+        return bot.sendMessage(user, "Your registration has been revoked.").fold(
             ifLeft = {
-                logger.info("User ${user.username} has been revoked.")
+                info(logger) { "User ${user.username} has been revoked." }
                 CallbackSuccess("Your registration has been revoked.")
             },
             ifRight = {
-                logger.error("Failed to send revocation message to user ${user.username}")
+                error(logger) { "Failed to send revocation message to user ${user.username}" }
                 CallbackFailure(it.message)
             }
         )
@@ -66,15 +67,15 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
      * @param databaseService The `StickfixDatabase` instance for accessing and updating user data.
      * @return CallbackResult The result of the revocation rejection, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot, databaseService: StickfixDatabase) = transaction {
-        logger.info("User ${user.username} has chosen not to revoke.")
+    override fun invoke(user: ReadUser, bot: StickfixBot) = transaction {
+        info(logger) { "User ${user.username} has chosen not to revoke." }
         bot.sendMessage(user, "Your registration has not been revoked.").fold(
             ifLeft = {
-                logger.info("User ${user.username} has chosen not to revoke.")
+                info(logger) { "User ${user.username} has chosen not to revoke." }
                 CallbackSuccess("Your registration has not been revoked.")
             },
             ifRight = {
-                logger.error("Failed to send revocation rejection message to user ${user.username}")
+                error(logger) { "Failed to send revocation rejection message to user ${user.username}" }
                 CallbackFailure(it.message)
             }
         )

@@ -21,4 +21,14 @@ package cl.ravenhill.stickfix.exceptions
  * @param message A string describing the error message. This provides context for the error,
  *                making it easier to understand the reason for the failure.
  */
-class DatabaseOperationException(message: String) : Exception(message)
+class DatabaseOperationException(message: String) : Exception(message) {
+    /**
+     * Constructs a `DatabaseOperationException` with an additional cause for the exception.
+     *
+     * @param message A string describing the error message.
+     * @param cause The underlying cause of the exception.
+     */
+    constructor(message: String, cause: Throwable) : this(message) {
+        initCause(cause)
+    }
+}

@@ -7,7 +7,6 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.RevokeCommand
-import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
@@ -22,14 +21,13 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Revoke")
  * Registers the revoke command within the given dispatcher context. This function handles the revocation process by
  * invoking the `RevokeCommand` and logging the results of the execution.
  *
- * @param databaseService The `StickfixDatabase` instance used for accessing and updating user data.
  * @param bot The `StickfixBot` instance used to send messages to the user.
  */
 context(Dispatcher)
-internal fun registerRevokeCommand(databaseService: StickfixDatabase, bot: StickfixBot) {
+internal fun registerRevokeCommand(bot: StickfixBot) {
     command(RevokeCommand.NAME) {
         info(logger) { "Received revoke command" }
-        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
+        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot).execute()) {
             is CommandSuccess -> info(logger) { "Revoke command executed successfully: $result" }
             is CommandFailure -> error(logger) { "Revoke command failed: $result" }
         }
@@ -41,14 +39,14 @@ internal fun registerRevokeCommand(databaseService: StickfixDatabase, bot: Stick
  * handles the confirmation process by invoking the `RevokeConfirmationYes` callback and logging the results of the
  * execution.
  *
- * @param databaseService The `StickfixDatabase` instance used for accessing and updating user data.
+ * @param bot The `StickfixBot` instance used to send messages to the user.
  */
 context(Dispatcher)
-internal fun registerRevokeConfirmationYes(databaseService: StickfixDatabase) {
+internal fun registerRevokeConfirmationYes(bot: StickfixBot) {
     callbackQuery(RevokeConfirmationYes.name) {
-        databaseService.getUser(callbackQuery.from.id).fold(
+        bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { RevokeConfirmationYes(it.data, StickfixBot(databaseService), databaseService) }
+            ifRight = { RevokeConfirmationYes(it.data, bot) }
         )
     }
 }
@@ -58,16 +56,14 @@ internal fun registerRevokeConfirmationYes(databaseService: StickfixDatabase) {
  * handles the rejection process by invoking the `RevokeConfirmationNo` callback and logging the results of the
  * execution.
  *
- * @param databaseService The `StickfixDatabase` instance used for accessing and updating user data.
+ * @param bot The `StickfixBot` instance used to send messages to the user.
  */
 context(Dispatcher)
-internal fun registerRevokeConfirmationNo(databaseService: StickfixDatabase) {
+internal fun registerRevokeConfirmationNo(bot: StickfixBot) {
     callbackQuery(RevokeConfirmationNo.name) {
-        databaseService.getUser(callbackQuery.from.id).fold(
+        bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = {
-                RevokeConfirmationNo(it.data, StickfixBot(databaseService), databaseService)
-            }
+            ifRight = { RevokeConfirmationNo(it.data, bot) }
         )
     }
 }
