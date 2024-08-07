@@ -20,7 +20,6 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.StartCommand
-import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.db.schema.Meta
 import com.github.kotlintelegrambot.Bot
@@ -126,7 +125,7 @@ private fun registerCommands(databaseService: StickfixDatabase, bot: StickfixBot
         // region : Callback query registration
         registerStartConfirmationYes(databaseService, bot)
         registerStartConfirmationNo(databaseService, bot)
-        registerRevokeConfirmationYes(databaseService, bot)
+        registerRevokeConfirmationYes(databaseService)
         registerRevokeConfirmationNo(databaseService, bot)
         // endregion
     }

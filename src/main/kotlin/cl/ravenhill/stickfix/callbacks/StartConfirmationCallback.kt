@@ -107,7 +107,8 @@ data object StartConfirmationYes : StartConfirmationCallback() {
 
     /**
      * Handles the logic when a user confirms the intention to start or register. It checks the user's registration
-     * status and responds appropriately.
+     * status and responds appropriately by either registering the user or notifying them that they are already
+     * registered.
      *
      * @param user A `ReadUser` instance representing the user interacting with the bot.
      * @param bot A `StickfixBot` instance used to send messages back to the user.
@@ -120,18 +121,19 @@ data object StartConfirmationYes : StartConfirmationCallback() {
         bot: StickfixBot,
         databaseService: StickfixDatabase,
     ): CallbackResult {
-        // Retrieve user from database or register new user if not found
-        val registeredUser = databaseService.getUser(user)
-        val message = if (registeredUser.data == null) {
-            logger.info(registeringUserLog(user))
-            databaseService.addUser(user)
-            WELCOME_MESSAGE
-        } else {
-            ALREADY_REGISTERED_MESSAGE
-        }
-
-        // Send appropriate message to user via Telegram bot
-        return sendMessage(bot, user, message)
+        return databaseService.getUser(user).fold(
+            ifLeft = { error ->
+                logger.error("Failed to retrieve user data for ${user.debugInfo}: ${error.message}")
+                logger.info(registeringUserLog(user))
+                databaseService.addUser(user)
+                val message = WELCOME_MESSAGE
+                sendMessage(bot, user, message)
+            },
+            ifRight = { userResult ->
+                logger.info("Retrieved user data for ${user.debugInfo}: ${userResult.data}")
+                sendMessage(bot, user, ALREADY_REGISTERED_MESSAGE)
+            }
+        )
     }
 }
 

@@ -5,11 +5,13 @@
 
 package cl.ravenhill.stickfix.db
 
+import arrow.core.Either
 import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
 import cl.ravenhill.stickfix.db.schema.Users
+import cl.ravenhill.stickfix.exceptions.DatabaseOperationException
 import cl.ravenhill.stickfix.states.IdleState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -68,28 +70,27 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
             }
         }
 
-    /**
-     * Retrieves user details based on the provided user information.
-     *
-     * @param user A `ReadUser` instance containing minimal user information for which details are to be retrieved.
-     * @return ReadUser? The user details if found, or null if no user matches the provided information.
-     */
-    fun getUser(user: ReadUser): DatabaseOperationResult<StickfixUser?> =
-        DatabaseOperationSuccess("User retrieved successfully.",
-            transaction(database) {
-                val result = Users.selectAll().where { Users.id eq user.userId }
-                if (result.count() == 0L) {
-                    null
-                } else {
-                    StickfixUser.from(result.single())
-                }
-            })
+    fun getUser(user: ReadUser) = getUser(user.userId)
 
-    /**
-     * Adds a new user to the database.
-     *
-     * @param user A `ReadUser` instance containing the user information to be added to the database.
-     */
+    fun getUser(userId: Long) = transaction(database) {
+        val result = Users.selectAll().where { Users.id eq userId }
+        if (result.count() == 0L) {
+            Either.Left(
+                DatabaseOperationFailure(
+                    "User not found.",
+                    DatabaseOperationException("User with ID $userId not found.")
+                )
+            )
+        } else {
+            Either.Right(
+                DatabaseOperationSuccess(
+                    "User retrieved successfully.",
+                    StickfixUser.from(result.single())
+                )
+            )
+        }
+    }
+
     fun addUser(user: ReadUser): DatabaseOperationResult<StickfixUser> = transaction(database) {
         Users.insert {
             it[chatId] = user.userId  // Assigns the user's ID to the chatId column.
@@ -101,7 +102,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
 
     fun deleteUser(user: ReadUser) {
         transaction(database) {
-            Users.deleteWhere { Users.id eq user.userId }
+            Users.deleteWhere { id eq user.userId }
         }
     }
 
