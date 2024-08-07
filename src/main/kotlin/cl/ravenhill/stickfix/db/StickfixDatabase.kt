@@ -77,8 +77,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * Retrieves user information based on the given `ReadUser` instance.
      *
      * @param user The `ReadUser` instance representing the user.
-     * @return Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> The result of the query operation,
-     *         indicating success or failure, along with the retrieved user data.
+     * @return The result of the query operation, indicating success or failure, along with the retrieved user data.
      */
     fun getUser(user: ReadUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         getUser(user.userId)
@@ -87,8 +86,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * Retrieves user information based on the given user ID.
      *
      * @param userId The ID of the user to be retrieved.
-     * @return Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> The result of the query operation,
-     *         indicating success or failure, along with the retrieved user data.
+     * @return The result of the query operation, indicating success or failure, along with the retrieved user data.
      */
     fun getUser(userId: Long): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely {
@@ -129,7 +127,8 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      *
      * @param user The `ReadUser` instance representing the user.
      * @param mode The `PrivateMode` enum value indicating whether private mode is enabled or disabled.
-     * @return The result of the update operation, indicating success or failure, along with the new private mode setting.
+     * @return The result of the update operation, indicating success or failure, along with the new private mode
+     *   setting.
      */
     fun setPrivateMode(user: ReadUser, mode: PrivateMode) = executeDatabaseOperationSafely {
         Users.update({ Users.id eq user.userId }) {
@@ -155,8 +154,8 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * indicating success or failure.
      *
      * @param T The type of the result produced by the successful database operation.
-     * @param successful A lambda function representing the successful database operation to be executed within the transaction
-     *   context.
+     * @param successful A lambda function representing the successful database operation to be executed within the
+     *   transaction context.
      * @return The result of the database operation, wrapped in an `Either` type to indicate success or failure. On
      *   success, it returns a `DatabaseOperationSuccess` with a success message and the result of the operation. On
      *   failure, it returns a `DatabaseOperationFailure` with the appropriate error message and exception.
