@@ -1,31 +1,19 @@
 package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 
 /**
- * Represents the state for managing the private mode of a user in the bot. This class implements the `State` interface
- * and handles the processing of user input to enable or disable private mode.
+ * Represents the state where a user can enable or disable private mode in the Stickfix bot application. This state
+ * allows the user to change their privacy settings and handles the appropriate transitions based on the user's input.
+ * The `PrivateModeState` class implements the `State` interface, facilitating state-specific actions and transitions.
  *
- * ## Usage:
- * This class should be instantiated with a `ReadWriteUser` context. Upon instantiation, it sets itself as the user's
- * current state. The `process` method handles the user's input to either enable or disable private mode, updating the
- * user's settings in the database accordingly.
- *
- * ### Example 1: Creating and Using PrivateModeState
- * ```kotlin
- * val user = ReadWriteUserImpl("username", 12345L)  // Assume ReadWriteUserImpl is an implementation of ReadWriteUser
- * val privateModeState = PrivateModeState(user)
- * val bot = TelegramBotImpl("your_bot_token")  // Assume TelegramBotImpl is an implementation of TelegramBot
- * privateModeState.process("ENABLE", bot)
- * ```
- *
- * @property context The `ReadWriteUser` instance representing the user associated with this state. This allows the
- *   state to access and modify user data as necessary.
+ * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ *   state to have direct access to and modify user data as necessary during state transitions.
  */
 class PrivateModeState(override val context: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -35,15 +23,14 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
     }
 
     /**
-     * Processes the user's input text and takes appropriate actions to enable or disable private mode.
-     * If the input is invalid, it sends an error message to the user.
+     * Processes the user's input text and takes appropriate actions to enable or disable private mode. Provides
+     * feedback for invalid inputs.
      *
      * @param text The input text provided by the user.
-     * @param bot The `TelegramBot` instance used to send messages to the user.
-     * @return BotResult<*> The result of processing the input, which could be enabling, disabling,
-     *                      or an error message for invalid input.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of processing the input, indicating success or failure.
      */
-    override fun process(text: String?, bot: TelegramBot): BotResult<*> {
+    override fun process(text: String?, bot: StickfixBot): BotResult<*> {
         super.process(text, bot)
         return when (text?.uppercase()) {
             "ENABLE" -> handleEnable(bot)
@@ -57,13 +44,12 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
     }
 
     /**
-     * Handles enabling private mode by updating the user's settings in the database and sending a
-     * confirmation message.
+     * Handles enabling private mode for the user and updates the database accordingly.
      *
-     * @param bot The `TelegramBot` instance used to send messages to the user.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return BotResult<*> The result of enabling private mode, indicating success or failure.
      */
-    private fun handleEnable(bot: TelegramBot): BotResult<*> =
+    private fun handleEnable(bot: StickfixBot): BotResult<*> =
         handleCommonConfirmation(bot, "Private mode has been enabled.", context) {
             Users.update {
                 it[privateMode] = true
@@ -72,13 +58,12 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
         }
 
     /**
-     * Handles disabling private mode by updating the user's settings in the database and sending a
-     * confirmation message.
+     * Handles disabling private mode for the user and updates the database accordingly.
      *
-     * @param bot The `TelegramBot` instance used to send messages to the user.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return BotResult<*> The result of disabling private mode, indicating success or failure.
      */
-    private fun handleDisable(bot: TelegramBot): BotResult<*> =
+    private fun handleDisable(bot: StickfixBot): BotResult<*> =
         handleCommonRejection(bot, "Private mode has been disabled.", context) {
             Users.update {
                 it[privateMode] = false

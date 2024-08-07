@@ -2,7 +2,7 @@ package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotFailure
 import cl.ravenhill.stickfix.bot.BotResult
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.ReadWriteUser
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -11,43 +11,32 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("states.Utils")
 
 /**
- * Handles common confirmation actions for different bot commands. This function performs additional operations, logs
- * the confirmation, sends a message to the user, and updates the user's state to idle. It uses a transaction to ensure
- * database consistency.
+ * Handles common confirmation actions within the Stickfix bot application, performing additional operations,
+ * sending confirmation messages, and setting the user's state to idle.
  *
  * ## Usage:
- * This function is used to handle common confirmation actions such as enabling private mode or registering a user. It
- * encapsulates the common logic required for these operations and allows for specific additional operations to be
- * performed.
+ * Call this function to handle confirmation actions that require additional operations, logging, and sending
+ * confirmation messages to the user.
  *
- * ### Example 1: Using handleCommonConfirmation for Private Mode
+ * ### Example 1: Using handleCommonConfirmation
  * ```kotlin
- * private fun handlePrivateModeConfirmation(bot: TelegramBot, context: ReadWriteUser): BotResult<*> {
- *     return handleCommonConfirmation(bot, "Private mode has been enabled.", context) {
- *         Users.update {
- *             it[privateMode] = true
- *         }
+ * val result = handleCommonConfirmation(bot, "Action confirmed.", user) {
+ *     // Additional database operations
+ *     Users.update {
+ *         it[someColumn] = someValue
  *     }
  * }
+ * println(result.message)  // Outputs the result of the confirmation handling
  * ```
  *
- * ### Example 2: Using handleCommonConfirmation for Registration
- * ```kotlin
- * private fun handleRegistrationConfirmation(bot: TelegramBot, context: ReadWriteUser): BotResult<*> {
- *     return handleCommonConfirmation(bot, "You were successfully registered!", context) {
- *         // Additional operations for registration confirmation can be added here
- *     }
- * }
- * ```
- *
- * @param bot The `TelegramBot` instance used to send messages to the user.
- * @param message The message to be sent to the user upon confirmation.
- * @param context The `ReadWriteUser` instance representing the user confirming the action.
- * @param additionalOperations A lambda function containing additional operations to be performed within the transaction.
- * @return BotResult<*> The result of the confirmation operation, indicating success or failure.
+ * @param bot The `StickfixBot` instance used to send messages to the user.
+ * @param message The confirmation message to be sent to the user.
+ * @param context The `ReadWriteUser` instance representing the user who confirmed the action.
+ * @param additionalOperations The additional operations to be performed within a database transaction.
+ * @return BotResult<*> The result of the confirmation handling, indicating success or failure.
  */
 fun handleCommonConfirmation(
-    bot: TelegramBot,
+    bot: StickfixBot,
     message: String,
     context: ReadWriteUser,
     additionalOperations: Transaction.() -> Unit,
@@ -82,33 +71,32 @@ fun handleCommonConfirmation(
 }
 
 /**
- * Handles common rejection actions for different bot commands. This function performs additional operations, logs the
- * rejection, sends a message to the user, deletes the user's data from the database, and updates the user's state to
- * idle. It uses a transaction to ensure database consistency.
+ * Handles common rejection actions within the Stickfix bot application, performing additional operations,
+ * sending rejection messages, and setting the user's state to idle.
  *
  * ## Usage:
- * This function is used to handle common rejection actions such as denying a request or revoking access. It
- * encapsulates the common logic required for these operations and allows for specific additional operations to be
- * performed within the transaction.
+ * Call this function to handle rejection actions that require additional operations, logging, and sending
+ * rejection messages to the user.
  *
- * ### Example 1: Using handleCommonRejection for Revocation
+ * ### Example 1: Using handleCommonRejection
  * ```kotlin
- * fun handleRevocationRejection(bot: TelegramBot, context: ReadWriteUser): BotResult<*> {
- *     return handleCommonRejection(bot, "Your revocation request has been denied.", context) {
- *         // Additional operations for revocation rejection can be added here
+ * val result = handleCommonRejection(bot, "Action denied.", user) {
+ *     // Additional database operations
+ *     Users.update {
+ *         it[someColumn] = someValue
  *     }
  * }
+ * println(result.message)  // Outputs the result of the rejection handling
  * ```
  *
- * @param bot The `TelegramBot` instance used to send messages to the user.
- * @param message The message to be sent to the user upon rejection.
- * @param context The `ReadWriteUser` instance representing the user denying the action.
- * @param additionalOperations A lambda function containing additional operations to be performed within the
- *   transaction.
- * @return BotResult<*> The result of the rejection operation, indicating success or failure.
+ * @param bot The `StickfixBot` instance used to send messages to the user.
+ * @param message The rejection message to be sent to the user.
+ * @param context The `ReadWriteUser` instance representing the user who denied the action.
+ * @param additionalOperations The additional operations to be performed within a database transaction.
+ * @return BotResult<*> The result of the rejection handling, indicating success or failure.
  */
 fun handleCommonRejection(
-    bot: TelegramBot,
+    bot: StickfixBot,
     message: String,
     context: ReadWriteUser,
     additionalOperations: Transaction.() -> Unit,

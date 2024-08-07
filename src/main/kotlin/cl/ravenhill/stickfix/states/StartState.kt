@@ -1,31 +1,22 @@
 package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.slf4j.LoggerFactory
 
+
 /**
- * Represents the state of a user actively engaging in the registration process within the Telegram bot system.
- * This state handles responses to registration prompts, managing transitions between states based on user input,
- * and updating or validating user records in the database.
+ * Represents the state where a user can confirm or deny their registration in the Stickfix bot application. This state
+ * allows the user to finalize their decision regarding the registration process and handles the appropriate transitions
+ * based on the user's input. The `StartState` class implements the `State` interface, facilitating state-specific
+ * actions and transitions.
  *
- * ## Usage:
- * This class is primarily used during the registration workflow to interpret user responses and guide them through
- * the necessary steps of registration. Depending on the user's input, it can confirm registration, reject it,
- * or request clarification in the case of unclear input.
- *
- * ### Example:
- * ```kotlin
- * val startState = StartState(user)
- * val result = startState.process("YES", bot)
- * println(result.message) // Expected to log a success or failure message based on user input.
- * ```
- *
- * @property context The context encapsulates the `ReadWriteUser` who is currently interacting with the bot.
+ * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ *   state to have direct access to and modify user data as necessary during state transitions.
  */
 data class StartState(override val context: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -35,15 +26,14 @@ data class StartState(override val context: ReadWriteUser) : State {
     }
 
     /**
-     * Processes the user's text input during the registration process and determines the next steps based
-     * on the content of the input.
+     * Processes the user's input text and takes appropriate actions to confirm or deny the registration. Provides
+     * feedback for invalid inputs.
      *
-     * @param text The user's input text, possibly null, indicating their decision during registration.
-     * @param bot The Bot instance used to send messages to the user.
-     * @return A `BotResult` indicating the outcome of the processing, including any state transitions or
-     * necessary messages sent to the user.
+     * @param text The input text provided by the user.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of processing the input, indicating success or failure.
      */
-    override fun process(text: String?, bot: TelegramBot): BotResult<*> {
+    override fun process(text: String?, bot: StickfixBot): BotResult<*> {
         super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
@@ -57,16 +47,34 @@ data class StartState(override val context: ReadWriteUser) : State {
         }
     }
 
-    private fun handleConfirmation(bot: TelegramBot): BotResult<*> =
+    /**
+     * Handles the confirmation of registration, logging the action and updating the database.
+     *
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of confirming the registration, indicating success or failure.
+     */
+    private fun handleConfirmation(bot: StickfixBot): BotResult<*> =
         handleCommonConfirmation(bot, "You were successfully registered!", context) {
             logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
         }
 
-    private fun handleRejection(bot: TelegramBot): BotResult<*> =
+    /**
+     * Handles the rejection of registration, logging the action, deleting the user from the database, and sending a
+     * confirmation message.
+     *
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of rejecting the registration, indicating success or failure.
+     */
+    private fun handleRejection(bot: StickfixBot): BotResult<*> =
         handleCommonRejection(bot, "Registration cancelled.", context) {
             logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
             Users.deleteWhere { id eq context.userId }
         }
 
+    /**
+     * Provides a string representation of the state, returning the simple name of the class.
+     *
+     * @return String The simple name of the class.
+     */
     override fun toString() = this::class.simpleName!!
 }

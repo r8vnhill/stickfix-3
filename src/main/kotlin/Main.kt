@@ -41,9 +41,9 @@ fun main() {
  *  A `TimedValue<DatabaseService>` containing the initialized database service and the time taken
  *  to initialize it, facilitating performance analysis.
  */
-private fun initDatabase(db: DatabaseService): DatabaseService {
+private fun initDatabase(db: StickfixDatabase): StickfixDatabase {
     logger.info("Initializing database")
-    return db.init()
+    return db.init().data
 }
 
 /**

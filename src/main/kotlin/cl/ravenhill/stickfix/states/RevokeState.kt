@@ -2,7 +2,7 @@ package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.BotSuccess
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -11,24 +11,13 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
 /**
- * Represents a state in which the user can confirm or reject the revocation of their registration. This state is part
- * of the state-driven application, handling the user's input to either revoke or retain their registration.
+ * Represents the state where a user can confirm or deny the revocation of their registration in the Stickfix bot
+ * application. This state allows the user to finalize their decision regarding the revocation process and handles the
+ * appropriate transitions based on the user's input. The `RevokeState` class implements the `State` interface,
+ * facilitating state-specific actions and transitions.
  *
- * ## Usage:
- * This class should be instantiated with a `ReadWriteUser` context. Upon instantiation, it sets itself as the user's
- * current state. The `process` method handles the user's response, guiding them through the revocation process based on
- * their input.
- *
- * ### Example 1: Creating and Using RevokeState
- * ```kotlin
- * val user = ReadWriteUserImpl("username", 12345L)  // Assume ReadWriteUserImpl is an implementation of ReadWriteUser
- * val revokeState = RevokeState(user)
- * val bot = TelegramBotImpl("your_bot_token")  // Assume TelegramBotImpl is an implementation of TelegramBot
- * revokeState.process("YES", bot)
- * ```
- *
- * @property context The `ReadWriteUser` instance representing the user associated with this state.
- *   This allows the state to access and modify user data during the revocation process.
+ * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ *   state to have direct access to and modify user data as necessary during state transitions.
  */
 data class RevokeState(override val context: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -39,16 +28,14 @@ data class RevokeState(override val context: ReadWriteUser) : State {
     }
 
     /**
-     * Processes the user's input text and takes appropriate actions based on the input. The input is expected to be
-     * either "YES" to confirm revocation or "NO" to reject revocation. Any other input is considered invalid and will
-     * prompt the user to provide valid input.
+     * Processes the user's input text and takes appropriate actions to confirm or deny the revocation. Provides
+     * feedback for invalid inputs.
      *
      * @param text The input text provided by the user.
-     * @param bot The `TelegramBot` instance used to send messages to the user.
-     * @return BotResult The result of processing the input, which could be a confirmation, rejection, or an invalid
-     *   input response.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of processing the input, indicating success or failure.
      */
-    override fun process(text: String?, bot: TelegramBot): BotResult<*> {
+    override fun process(text: String?, bot: StickfixBot): BotResult<*> {
         super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
@@ -62,16 +49,26 @@ data class RevokeState(override val context: ReadWriteUser) : State {
         }
     }
 
-    // Handles the confirmation of revocation by deleting the user from the database and notifying them
-    private fun handleConfirmation(bot: TelegramBot): BotResult<*> = transaction {
+    /**
+     * Handles the confirmation of revocation, removing the user from the database and sending a confirmation message.
+     *
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of confirming the revocation, indicating success or failure.
+     */
+    private fun handleConfirmation(bot: StickfixBot): BotResult<*> = transaction {
         Users.deleteWhere { id eq context.userId }
         logger.info("User ${context.username} has been revoked.")
         bot.sendMessage(context, "Your registration has been revoked.")
         BotSuccess("Your registration has been revoked.", true)
     }
 
-    // Handles the rejection of revocation by notifying the user that their registration remains active
-    private fun handleRejection(bot: TelegramBot): BotResult<*> {
+    /**
+     * Handles the rejection of revocation, retaining the user's registration and sending a confirmation message.
+     *
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @return BotResult<*> The result of rejecting the revocation, indicating success or failure.
+     */
+    private fun handleRejection(bot: StickfixBot): BotResult<*> {
         logger.info("User ${context.username} has chosen not to revoke.")
         bot.sendMessage(context, "Your registration has not been revoked.")
         return BotSuccess("Your registration has not been revoked.", true)
