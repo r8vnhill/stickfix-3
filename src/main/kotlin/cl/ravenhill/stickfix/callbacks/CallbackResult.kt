@@ -11,26 +11,11 @@ package cl.ravenhill.stickfix.callbacks
  * all callback results
  * provide a message detailing the outcome, which aids in debugging and user feedback.
  *
- * ## Usage:
- * Implement this interface in scenarios where functions or methods return a result from a callback operation,
- * particularly when such operations can have distinctly categorized outcomes (success or failure). The message
- * included in each result provides context about the operation's outcome.
- *
- * ### Example 1: Processing Callback Results
- * ```kotlin
- * fun processCallbackResult(result: CallbackResult) {
- *     when (result) {
- *         is CallbackSuccess -> println("Operation succeeded: ${result.message}")
- *         is CallbackFailure -> println("Operation failed: ${result.message}")
- *     }
- * }
- * ```
- *
  * @property message A string that contains a descriptive message about the outcome of the callback operation.
  * This message is intended to provide insight into the success or failure of the operation, supporting better
  * understanding and traceability.
  */
-interface CallbackResult {
+sealed interface CallbackResult {
     val message: String
 }
 

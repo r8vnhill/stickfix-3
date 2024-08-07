@@ -5,6 +5,7 @@
 
 package cl.ravenhill.stickfix.db
 
+import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
@@ -12,6 +13,8 @@ import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.states.IdleState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -96,6 +99,24 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         DatabaseOperationSuccess("User added successfully.", StickfixUser(user.username, user.userId))
     }
 
+    fun deleteUser(user: ReadUser) {
+        transaction(database) {
+            Users.deleteWhere { Users.id eq user.userId }
+        }
+    }
+
+    fun setPrivateMode(user: ReadUser, mode: PrivateMode): DatabaseOperationResult<PrivateMode> {
+        transaction(database) {
+            Users.update({ Users.id eq user.userId }) {
+                it[privateMode] = when (mode) {
+                    PrivateMode.ENABLED -> true
+                    PrivateMode.DISABLED -> false
+                }
+            }
+        }
+        return DatabaseOperationSuccess("Private mode set to $mode.", mode)
+    }
+
     /**
      * Provides a string representation of the StickfixDatabase instance.
      *
@@ -103,8 +124,4 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      */
     override fun toString() =
         "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
-
-    fun deleteUser(user: ReadUser) {
-        TODO("Not yet implemented")
-    }
 }

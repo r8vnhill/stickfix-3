@@ -119,12 +119,16 @@ class StickfixBot(val databaseService: StickfixDatabase) {
 context(Bot.Builder)
 private fun registerCommands(databaseService: StickfixDatabase, bot: StickfixBot) {
     dispatch {
+        // region : Command registration
         registerStartCommand(databaseService, bot)
         registerRevokeCommand(databaseService, bot)
+        // endregion
+        // region : Callback query registration
         registerStartConfirmationYes(databaseService, bot)
         registerStartConfirmationNo(databaseService, bot)
         registerRevokeConfirmationYes(databaseService, bot)
         registerRevokeConfirmationNo(databaseService, bot)
+        // endregion
     }
 }
 

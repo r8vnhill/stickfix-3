@@ -10,9 +10,11 @@ import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
+import cl.ravenhill.stickfix.info
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /** A detailed welcome message providing instructions and options for new users. */
@@ -57,7 +59,7 @@ data class StartCommand(
     override val bot: StickfixBot,
     override val databaseService: StickfixDatabase,
 ) : Command {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Executes the start command, checking if the user is already registered and sending the appropriate message.
@@ -67,14 +69,14 @@ data class StartCommand(
      *   messages.
      */
     override fun execute(): CommandResult {
-        logger.info(initMessage(user))
+        info(logger) { initMessage(user) }
         val registeredUser = databaseService.getUser(user)
         val result = if (registeredUser.data != null) {
             sendWelcomeBackMessage(user)
         } else {
             sendRegistrationPrompt(user)
         }
-        logger.info("Start command result: $result")
+        info(logger) { "Start command result: $result" }
         return result
     }
 
