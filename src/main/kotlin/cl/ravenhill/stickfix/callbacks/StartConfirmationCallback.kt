@@ -40,22 +40,6 @@ private fun errorSendingMessageLog(user: ReadUser, result: BotResult<*>) =
     "Failed to send message to ${user.debugInfo}: ${result.message}"
 
 /**
- * Generates a standardized success log message for successfully sent messages to users.
- * This utility is used to maintain consistent and clear logging for successful interactions
- * with users through the application's messaging system, aiding in monitoring and verifying
- * successful communications.
- *
- * @param user
- *  The user to whom the message was successfully sent. User details are utilized for logging
- *  purposes.
- * @return
- *  A formatted string suitable for logging, which includes the user's identifier, confirming the
- *  success of the message delivery.
- */
-private fun successSendingMessageLog(user: ReadUser) =
-    "Message sent successfully to ${user.debugInfo}"
-
-/**
  * Generates a standardized log message for registering new users in the system.
  *
  * @param user

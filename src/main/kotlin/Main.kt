@@ -25,7 +25,7 @@ fun main() {
         val (bot, botSetupTime) = timed {
             StickfixBot(databaseService)
         }
-        logger.info("Bot setup in ${botSetupTime/8}")
+        logger.info("Bot setup in $botSetupTime ms")
         logger.info(bot.start())
     }
 }
