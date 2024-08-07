@@ -5,13 +5,11 @@
 
 package cl.ravenhill.stickfix.commands
 
-import cl.ravenhill.stickfix.bot.BotFailure
-import cl.ravenhill.stickfix.bot.BotSuccess
-import cl.ravenhill.stickfix.bot.TelegramBot
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.StickfixDatabase
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
@@ -43,40 +41,35 @@ private val welcomeMessage = """
 private fun initMessage(user: ReadUser) = "Executing start command for user ${user.debugInfo}"
 
 /**
- * Handles the command to start interactions with a Telegram bot. This class manages user
- * registration and welcome messages, distinguishing between new and returning users.
+ * Represents the command to start the Stickfix bot for a user. This command handles checking if the user is already
+ * registered and sends either a welcome back message or a registration prompt accordingly. It implements the `Command`
+ * interface, utilizing the provided bot instance, user information, and database service.
  *
- * @property user
- *  The user performing the command.
- * @property bot
- *  The Telegram bot instance used for sending messages.
- * @property databaseService
- *  The service for accessing user data in the database.
- * @constructor
- *  Creates a new instance of the StartCommand class, initializing it with the user, bot, and
- *  database service.
+ * @property user The `ReadUser` instance representing the user issuing the command. This provides read-only access to
+ *   basic user information like username and user ID.
+ * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows the command to
+ *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
+ * @property databaseService The `StickfixDatabase` instance used to interact with the database. This allows the command
+ *   to perform necessary database operations as part of its execution.
  */
 data class StartCommand(
     override val user: ReadUser,
-    override val bot: TelegramBot,
-    override val databaseService: DatabaseService,
+    override val bot: StickfixBot,
+    override val databaseService: StickfixDatabase,
 ) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Executes the start command. It checks if the user exists in the database to either send a
-     * welcome back message or a new registration prompt. Logs actions and outcomes for operational
-     * monitoring.
+     * Executes the start command, checking if the user is already registered and sending the appropriate message.
+     * Logs the result of the command execution.
      *
-     * @return [CommandResult]
-     *  Encapsulates the outcome of executing the start command, including user information and a
-     *  message. Returns [CommandSuccess] on successful message delivery, and [CommandFailure] if
-     *  the message fails to send.
+     * @return CommandResult The result of the command execution, indicating success or failure along with any relevant
+     *   messages.
      */
     override fun execute(): CommandResult {
         logger.info(initMessage(user))
         val registeredUser = databaseService.getUser(user)
-        val result = if (registeredUser != null) {
+        val result = if (registeredUser.data != null) {
             sendWelcomeBackMessage(user)
         } else {
             sendRegistrationPrompt(user)
@@ -86,11 +79,10 @@ data class StartCommand(
     }
 
     /**
-     * Sends a welcome back message to the user.
+     * Sends a welcome back message to the user if they are already registered.
      *
-     * @param user The user to send the message to.
-     * @return Returns a [CommandResult] object encapsulating the outcome of sending the message. Returns
-     *   [CommandSuccess] on successful message delivery, and [CommandFailure] if the message fails to send.
+     * @param user The `ReadUser` instance representing the user.
+     * @return CommandResult The result of the message sending operation, indicating success or failure.
      */
     private fun sendWelcomeBackMessage(user: ReadUser) = bot.sendMessage(user, "Welcome back!").fold(
         ifLeft = { CommandFailure(user, "Failed to send welcome back message.") },
@@ -98,15 +90,10 @@ data class StartCommand(
     )
 
     /**
-     * Sends a registration prompt to a new user along with an inline keyboard for interaction.
-     * This function is responsible for guiding unregistered users through the registration process,
-     * enhancing user engagement and facilitating the onboarding process.
+     * Sends a registration prompt to the user if they are not already registered.
      *
-     * @param user
-     *  The `ReadUser` instance representing the user to whom the registration prompt is being sent.
-     * @return
-     *  Returns a [CommandSuccess] indicating the success of sending the registration prompt,
-     *  encapsulating the user information and a message.
+     * @param user The `ReadUser` instance representing the user.
+     * @return CommandResult The result of the message sending operation, indicating success or failure.
      */
     private fun sendRegistrationPrompt(user: ReadUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
@@ -119,11 +106,10 @@ data class StartCommand(
         )
     }
 
-
     /**
-     * Creates an inline keyboard markup for displaying a row of buttons, enhancing user interaction.
+     * Creates an inline keyboard markup with "Yes" and "No" buttons for the registration prompt.
      *
-     * @return ReplyMarkup The created inline keyboard markup with "Yes" and "No" options.
+     * @return ReplyMarkup The inline keyboard markup.
      */
     private fun inlineKeyboardMarkup(): ReplyMarkup {
         val yesButton = InlineKeyboardButton.CallbackData("Yes", StartConfirmationYes.name)
@@ -133,7 +119,9 @@ data class StartCommand(
     }
 
     companion object {
+        /**
+         * The name of the command, used to identify and register the command within the bot.
+         */
         const val NAME = "start"
     }
 }
-

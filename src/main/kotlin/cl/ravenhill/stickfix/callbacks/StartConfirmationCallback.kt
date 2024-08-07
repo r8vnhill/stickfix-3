@@ -6,11 +6,13 @@
 package cl.ravenhill.stickfix.callbacks
 
 import cl.ravenhill.stickfix.bot.BotResult
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
  * A constant representing the welcome message sent to users when they successfully register  with
@@ -64,60 +66,36 @@ private fun successSendingMessageLog(user: ReadUser) =
 private fun registeringUserLog(user: ReadUser) = "Registering new user: ${user.debugInfo}"
 
 /**
- * A base class for handling the start confirmation process in an application using a Telegram bot.
- * This sealed class defines common functionalities and structures that are shared across different
- * types of start confirmations, providing a uniform approach to initiating operations and handling
- * responses.
+ * Represents a handler for processing start confirmation callback queries in the Stickfix bot application. This sealed
+ * class extends the `CallbackQueryHandler` class, providing additional functionality for sending messages to users.
+ * Subclasses must define the specific logic for handling start confirmation queries by implementing the abstract
+ * properties and methods from `CallbackQueryHandler`.
  *
- * `StartConfirmation` extends `CallbackQueryHandler`, leveraging its callback handling framework
- * to interact with users through the Telegram bot. It encapsulates the logic for sending messages
- * to users and processing the responses, effectively managing both successful and unsuccessful outcomes.
- *
- * ## Usage:
- * Subclasses of `StartConfirmation` are designed to implement specific behaviors for different confirmation
- * scenarios. They utilize the `sendMessage` method to effectively communicate with users and handle the logic
- * based on the user's response.
- *
- * ### Example 1: Extending StartConfirmation
- * Here's how you might define a subclass that handles a specific type of start confirmation:
- * ```kotlin
- * object ConfirmStartSession : StartConfirmation() {
- *     override val name: String = "ConfirmStartSession"
- *
- *     override fun invoke(
- *         user: ReadUser,
- *         bot: TelegramBot,
- *         dbService: DatabaseService
- *     ): CallbackResult {
- *         val message = "Would you like to start the session?"
- *         return sendMessage(bot, user, message)
- *     }
- * }
- * ```
+ * @property logger A logger instance for logging actions related to callback query handling. This logger is used to
+ *   record activities such as processing queries and handling errors.
  */
 sealed class StartConfirmationCallback : CallbackQueryHandler() {
 
     /**
-     * Handles sending a message to a user via the Telegram bot and processes the response,
-     * returning a `CallbackResult`. This method centralizes error handling and response logging,
-     * ensuring that messages are sent correctly and that failures are thoroughly logged.
+     * Sends a message to the user via the bot and returns the appropriate `CallbackResult`. This method handles logging
+     * and error management, ensuring that any issues encountered during message sending are properly logged and
+     * reported.
      *
-     * @param bot An instance of `TelegramBot` used to send messages to the user.
-     * @param user The `ReadUser` instance representing the user to whom the message is being sent.
-     * @param message The message to be sent to the user.
-     * @return CallbackResult Either `CallbackSuccess` if the message is sent successfully, or
-     *  `CallbackFailure` if the message fails to send, encapsulating the error message.
+     * @param bot The `StickfixBot` instance used to send messages to the user.
+     * @param user The `ReadUser` instance representing the recipient of the message.
+     * @param message The text of the message to send to the user.
+     * @return CallbackResult The result of the message sending operation, indicating success or failure along with any
+     *   relevant messages.
      */
-    protected fun sendMessage(bot: TelegramBot, user: ReadUser, message: String) =
+    protected fun sendMessage(bot: StickfixBot, user: ReadUser, message: String) =
         bot.sendMessage(user, message).fold(
-            { CallbackSuccess(message) },
-            { error ->
+            ifLeft = { CallbackSuccess(message) },
+            ifRight = { error ->
                 logger.error(errorSendingMessageLog(user, error))
                 CallbackFailure(error.message)
             }
         )
 }
-
 
 /**
  * Handles the affirmative response to a start confirmation query in an application using a
@@ -151,7 +129,7 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      *  A `ReadUser` instance representing the user interacting with the bot.
      * @param bot
      *  A `TelegramBot` instance used to send messages back to the user.
-     * @param dbService
+     * @param databaseService
      *  A `DatabaseService` instance for accessing and updating user registration information.
      * @return CallbackResult
      *  The result of the operation, indicating whether the process was successful or if the user
@@ -159,14 +137,14 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      */
     override fun invoke(
         user: ReadUser,
-        bot: TelegramBot,
-        dbService: DatabaseService,
+        bot: StickfixBot,
+        databaseService: StickfixDatabase,
     ): CallbackResult {
         // Retrieve user from database or register new user if not found
-        val registeredUser = dbService.getUser(user)
+        val registeredUser = databaseService.getUser(user)
         val message = if (registeredUser == null) {
             logger.info(registeringUserLog(user))
-            dbService.addUser(user)
+            databaseService.addUser(user)
             WELCOME_MESSAGE
         } else {
             ALREADY_REGISTERED_MESSAGE

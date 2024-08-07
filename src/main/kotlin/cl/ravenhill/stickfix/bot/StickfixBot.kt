@@ -63,8 +63,8 @@ class StickfixBot(val databaseService: StickfixDatabase) {
     private var started: Boolean = false
 
     /**
-     * A local instance of the bot initialized with the API token from the `DatabaseService`.
-     * Registers commands using the provided database service and bot instance.
+     * A local instance of the bot initialized with the API token from the `DatabaseService`. Registers commands using
+     * the provided database service and bot instance.
      */
     private val _bot = bot {
         this@bot.token = queryApiKey(databaseService)
@@ -72,8 +72,8 @@ class StickfixBot(val databaseService: StickfixDatabase) {
     }
 
     /**
-     * Starts the bot's operations if it hasn't been started already. This involves starting to poll
-     * messages from Telegram's servers to listen for incoming commands and messages.
+     * Starts the bot's operations if it hasn't been started already. This involves starting to poll messages from
+     * Telegram's servers to listen for incoming commands and messages.
      *
      * @return A string message indicating whether the bot was successfully started or if it was already running.
      */
@@ -86,15 +86,16 @@ class StickfixBot(val databaseService: StickfixDatabase) {
     }
 
     /**
-     * Sends a message to a specific user via the Telegram bot. The message can include markdown formatting
+     * Sends a message to a specific user via the Telegram bot. The message can include Markdown formatting
      * and optional interactive components such as keyboards.
      *
      * @param user The `ReadUser` instance representing the recipient of the message.
-     * @param message The text of the message to send, which may include markdown formatting.
+     * @param message The text of the message to send, which may include Markdown formatting.
      * @param replyMarkup Optional parameter that allows adding interactive components to the message.
-     * @return Either a `BotSuccess` or `BotFailure` result indicating the success or failure of the message sending operation.
+     * @return Either a `BotSuccess` or `BotFailure` result indicating the success or failure of the message sending
+     *   operation.
      */
-    fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup?) =
+    fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup? = null) =
         _bot.sendMessage(ChatId.fromId(user.userId), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
             ifSuccess = {
                 Either.Left(
@@ -116,7 +117,7 @@ class StickfixBot(val databaseService: StickfixDatabase) {
 }
 
 context(Bot.Builder)
-private fun registerCommands(databaseService: DatabaseService, bot: StickfixBot) {
+private fun registerCommands(databaseService: StickfixDatabase, bot: StickfixBot) {
     dispatch {
         registerStartCommand(databaseService, bot)
         registerRevokeCommand(databaseService, bot)
@@ -128,7 +129,7 @@ private fun registerCommands(databaseService: DatabaseService, bot: StickfixBot)
 }
 
 context(Dispatcher)
-private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: StickfixBot) {
+private fun registerStartConfirmationYes(databaseService: StickfixDatabase, bot: StickfixBot) {
     callbackQuery(StartConfirmationYes.name) {
         val user = StickfixUser.from(callbackQuery.from)
         StartConfirmationYes(user, bot, databaseService)
@@ -136,7 +137,7 @@ private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: 
 }
 
 context(Dispatcher)
-private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: StickfixBot) {
+private fun registerStartConfirmationNo(databaseService: StickfixDatabase, bot: StickfixBot) {
     callbackQuery(StartConfirmationNo.name) {
         val user = StickfixUser.from(callbackQuery.from)
         StartConfirmationNo(user, bot, databaseService)
@@ -144,7 +145,7 @@ private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: S
 }
 
 context(Dispatcher)
-private fun registerStartCommand(databaseService: DatabaseService, bot: StickfixBot) {
+private fun registerStartCommand(databaseService: StickfixDatabase, bot: StickfixBot) {
     command(StartCommand.NAME) {
         logger.info("Received start command from ${message.from}")
         when (val result = StartCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
@@ -163,7 +164,7 @@ private fun registerStartCommand(databaseService: DatabaseService, bot: Stickfix
  * @return Returns the string value of the API key if found and valid.
  * @throws CompositeException If the constraint for the presence of "API_KEY" is not met.
  */
-private fun queryApiKey(databaseService: DatabaseService): String = transaction(databaseService.database) {
+private fun queryApiKey(databaseService: StickfixDatabase): String = transaction(databaseService.database) {
     val result = Meta.selectAll().where { Meta.key eq "API_KEY" }.constrainedTo {
         "API_KEY must be present in meta table" { it.count() must BeEqualTo(1L) }
     }

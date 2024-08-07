@@ -16,52 +16,43 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.util.*
 
 /**
- * A concrete implementation of the `DatabaseService` that manages a database connection
- * using JDBC. This class is responsible for initializing the database, managing API tokens,
- * and performing database transactions.
+ * Represents the Stickfix database, providing functionalities for initializing the database, managing the API token,
+ * and handling user data operations. This class integrates with an SQL database using the provided JDBC URL and driver
+ * name.
  *
- * ## Usage:
- * Instantiate `StickfixDatabase` with a JDBC URL and a driver name. Use the `init` method
- * to establish a connection and create necessary tables. API tokens can be set or retrieved
- * using the provided methods.
- *
- * @constructor Creates a new instance of `StickfixDatabase` with specified JDBC URL and driver
- *  name.
- * @param jdbcUrl The JDBC URL for the database connection.
- * @param driverName The fully qualified name of the JDBC driver.
- * @property database Holds the `Database` instance once `init` is called. This property is late-initialized.
- * @property apiToken Provides a getter to retrieve the API token from the `Meta` table in the database.
+ * @property jdbcUrl The JDBC URL used to connect to the database.
+ * @property driverName The name of the database driver to be used for the connection.
  */
-class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) :
-    DatabaseService {
+class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) {
 
-    override lateinit var database: Database
+    /**
+     * The database instance used for performing database operations.
+     */
+    lateinit var database: Database
         private set
 
     /**
-     * Initializes the database connection using the provided JDBC URL and driver name.
-     * This method also ensures that the `Meta` table is created if it does not already exist.
+     * Initializes the database, creating necessary tables and setting up the connection.
      *
-     * @return DatabaseService Returns this instance, allowing for method chaining.
+     * @return DatabaseOperationResult<StickfixDatabase> The result of the initialization operation, indicating success
+     *   or failure along with the database instance.
      */
-    override fun init(): DatabaseService {
+    fun init(): DatabaseOperationResult<StickfixDatabase> {
         database = Database.connect(jdbcUrl, driverName)
         transaction(database) {
             SchemaUtils.create(Meta, Users)
         }
-        return this
+        return DatabaseOperationSuccess("Database initialized successfully.", this)
     }
 
     /**
-     * Retrieves the current API token stored in the database. This method executes a
-     * database transaction to fetch the token from the `Meta` table.
+     * Manages the API token used for authentication and authorization.
      *
-     * @return String The current API token.
+     * @return String The current API token stored in the database.
      */
-    override var apiToken: String
+    var apiToken: String
         get() = transaction(database) {
             Meta.selectAll().single()[Meta.key]
         }
@@ -74,32 +65,46 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
             }
         }
 
-    override fun getUser(user: ReadUser): ReadUser? = transaction(database) {
-        val result = Users.selectAll().where { Users.id eq user.userId }
-        if (result.count() == 0L) {
-            null
-        } else {
-            StickfixUser.from(result.single())
+    /**
+     * Retrieves user details based on the provided user information.
+     *
+     * @param user A `ReadUser` instance containing minimal user information for which details are to be retrieved.
+     * @return ReadUser? The user details if found, or null if no user matches the provided information.
+     */
+    fun getUser(user: ReadUser): DatabaseOperationResult<StickfixUser?> =
+        DatabaseOperationSuccess("User retrieved successfully.",
+            transaction(database) {
+                val result = Users.selectAll().where { Users.id eq user.userId }
+                if (result.count() == 0L) {
+                    null
+                } else {
+                    StickfixUser.from(result.single())
+                }
+            })
+
+    /**
+     * Adds a new user to the database.
+     *
+     * @param user A `ReadUser` instance containing the user information to be added to the database.
+     */
+    fun addUser(user: ReadUser): DatabaseOperationResult<StickfixUser> = transaction(database) {
+        Users.insert {
+            it[chatId] = user.userId  // Assigns the user's ID to the chatId column.
+            it[username] = user.username  // Sets the username field.
+            it[state] = IdleState::class.simpleName!!  // Initializes the state to 'Idle'.
         }
+        DatabaseOperationSuccess("User added successfully.", StickfixUser(user.username, user.userId))
     }
 
-    override fun addUser(user: ReadUser) {
-        transaction(database) {
-            Users.insert {
-                it[chatId] = user.userId  // Assigns the user's ID to the chatId column.
-                it[username] = user.username  // Sets the username field.
-                it[state] = IdleState::class.simpleName!!  // Initializes the state to 'Idle'.
-            }
-        }
-    }
-
+    /**
+     * Provides a string representation of the StickfixDatabase instance.
+     *
+     * @return String A string representation of the StickfixDatabase instance, including the JDBC URL and driver name.
+     */
     override fun toString() =
         "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
 
-    override fun equals(other: Any?): Boolean = when (other) {
-        is StickfixDatabase -> jdbcUrl == other.jdbcUrl && driverName == other.driverName
-        else                -> false
+    fun deleteUser(user: ReadUser) {
+        TODO("Not yet implemented")
     }
-
-    override fun hashCode(): Int = Objects.hash(StickfixDatabase::class, jdbcUrl, driverName)
 }
