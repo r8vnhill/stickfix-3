@@ -7,11 +7,9 @@ package cl.ravenhill.stickfix.callbacks
 
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
@@ -98,23 +96,9 @@ sealed class StartConfirmationCallback : CallbackQueryHandler() {
 }
 
 /**
- * Handles the affirmative response to a start confirmation query in an application using a
- * Telegram bot. This object extends `StartConfirmation`, applying specific logic for users who
- * confirm a start action. It checks if the user is already registered and either registers them or
- * notifies them of their current status.
- *
- * ## Usage:
- * This class is triggered when a user sends a confirmation to start or activate a service or
- * process. It interacts with the database to verify user registration and communicates with the
- * user through the Telegram bot based on the user's registration status.
- *
- * ### Example 1: Using StartConfirmationYes
- * ```kotlin
- * // This example assumes a scenario where StartConfirmationYes
- * // is invoked through a user interaction flow.
- * val result = StartConfirmationYes(user, bot, dbService)
- * println(result.message)  // Output depends on the user's registration status
- * ```
+ * Handles the affirmative response to a start confirmation query in the Stickfix bot application. This object extends
+ * `StartConfirmationCallback`, applying specific logic for users who confirm a start action. It checks if the user is
+ * already registered and either registers them or notifies them of their current status.
  *
  * @property name The simple name of the class, used for logging and reference within the system.
  */
@@ -122,18 +106,14 @@ data object StartConfirmationYes : StartConfirmationCallback() {
     override val name = this::class.simpleName!!
 
     /**
-     * Handles the logic when a user confirms the intention to start or register. It checks the
-     * user's registration status and responds appropriately.
+     * Handles the logic when a user confirms the intention to start or register. It checks the user's registration
+     * status and responds appropriately.
      *
-     * @param user
-     *  A `ReadUser` instance representing the user interacting with the bot.
-     * @param bot
-     *  A `TelegramBot` instance used to send messages back to the user.
-     * @param databaseService
-     *  A `DatabaseService` instance for accessing and updating user registration information.
-     * @return CallbackResult
-     *  The result of the operation, indicating whether the process was successful or if the user
-     *  was already registered, with appropriate messages delivered via the bot.
+     * @param user A `ReadUser` instance representing the user interacting with the bot.
+     * @param bot A `StickfixBot` instance used to send messages back to the user.
+     * @param databaseService A `StickfixDatabase` instance for accessing and updating user registration information.
+     * @return CallbackResult The result of the operation, indicating whether the process was successful or if the user
+     *   was already registered, with appropriate messages delivered via the bot.
      */
     override fun invoke(
         user: ReadUser,
@@ -142,7 +122,7 @@ data object StartConfirmationYes : StartConfirmationCallback() {
     ): CallbackResult {
         // Retrieve user from database or register new user if not found
         val registeredUser = databaseService.getUser(user)
-        val message = if (registeredUser == null) {
+        val message = if (registeredUser.data == null) {
             logger.info(registeringUserLog(user))
             databaseService.addUser(user)
             WELCOME_MESSAGE
@@ -156,46 +136,29 @@ data object StartConfirmationYes : StartConfirmationCallback() {
 }
 
 /**
- * Handles the negative response to a start confirmation query in an application using a Telegram
- * bot. This object extends `StartConfirmation`, applying specific logic for users who explicitly
- * decline to start or register for a service. It informs users that they can register at a later
- * time and logs their decision for future reference.
+ * Handles the negative response to a start confirmation query in the Stickfix bot application. This object extends
+ * `StartConfirmationCallback`, applying specific logic for users who decline a start action. It sends a message to the
+ * user confirming their choice and logs the action.
  *
- * ## Usage:
- * Triggered in user interaction flows where users are given the choice to confirm or decline starting
- * or registering for a service. This class is responsible for sending a message that acknowledges the
- * user's decision not to proceed and reminds them that the option to register remains available.
- *
- * ### Example 1: Using StartConfirmationNo
- * ```kotlin
- * val user = ReadUserImpl("username", 1L) // Example user implementation
- * val bot = TelegramBotImpl("bot_token") // Example bot implementation
- * val dbService = DatabaseServiceImpl() // Example database service implementation
- * val result = StartConfirmationNo(user, bot, dbService)
- * println(result.message)  // Outputs: "You have chosen not to register. Remember you can always register later!"
- * ```
- *
- * @property name The simple name of this class, used for logging and referencing within the system.
+ * @property name The simple name of the class, used for logging and reference within the system.
  */
 data object StartConfirmationNo : StartConfirmationCallback() {
     override val name = this::class.simpleName!!
 
     /**
-     * Processes the user's negative confirmation to start or register. It logs the user's decision
-     * and sends them a message confirming their choice, while reminding them of the possibility to
-     * register later.
+     * Handles the logic when a user declines the intention to start or register. It sends a message confirming the
+     * user's choice and logs the action.
      *
      * @param user A `ReadUser` instance representing the user interacting with the bot.
-     * @param bot A `TelegramBot` instance used to send messages back to the user.
-     * @param dbService A `DatabaseService` instance, although not directly used, included for
-     * consistency and potential future use.
-     * @return CallbackResult The result of the operation, indicating the message was successfully
-     * sent with a confirmation of the user's decision, or detailing any failure that occurred.
+     * @param bot A `StickfixBot` instance used to send messages back to the user.
+     * @param databaseService A `StickfixDatabase` instance for accessing and updating user registration information.
+     * @return CallbackResult The result of the operation, indicating the user's choice not to register, with
+     *   appropriate messages delivered via the bot.
      */
     override fun invoke(
         user: ReadUser,
-        bot: TelegramBot,
-        dbService: DatabaseService,
+        bot: StickfixBot,
+        databaseService: StickfixDatabase,
     ): CallbackResult {
         val logMessage = "User ${user.debugInfo} chose not to register."
         logger.info(logMessage)
