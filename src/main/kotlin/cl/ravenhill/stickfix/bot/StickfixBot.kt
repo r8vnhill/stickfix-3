@@ -9,6 +9,8 @@ import arrow.core.Either
 import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
+import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeDisabledCallback
+import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeEnabledCallback
 import cl.ravenhill.stickfix.exceptions.MessageSendingException
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationNo
@@ -127,6 +129,8 @@ private fun registerCommands(databaseService: StickfixDatabase, bot: StickfixBot
         registerStartConfirmationNo(databaseService, bot)
         registerRevokeConfirmationYes(databaseService)
         registerRevokeConfirmationNo(databaseService)
+        registerPrivateModeEnabledCallback(bot)
+        registerPrivateModeDisabledCallback(bot)
         // endregion
     }
 }
