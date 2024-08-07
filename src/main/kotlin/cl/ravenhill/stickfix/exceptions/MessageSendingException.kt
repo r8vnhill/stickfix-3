@@ -1,4 +1,4 @@
-package cl.ravenhill.stickfix
+package cl.ravenhill.stickfix.exceptions
 
 import com.github.kotlintelegrambot.types.TelegramBotResult
 

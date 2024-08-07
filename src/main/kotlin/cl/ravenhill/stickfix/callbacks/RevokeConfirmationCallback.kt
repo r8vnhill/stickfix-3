@@ -43,6 +43,7 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
      * @return CallbackResult The result of the callback operation, indicating success or failure.
      */
     override fun invoke(user: ReadUser, bot: TelegramBot, dbService: DatabaseService) = transaction {
+        dbService.deleteUser(user)
         Users.deleteWhere { id eq user.userId }
         logger.info("User ${user.username} has been revoked.")
         bot.sendMessage(user, "Your registration has been revoked.").fold(

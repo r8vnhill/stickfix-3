@@ -9,20 +9,20 @@ import arrow.core.Either
 import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
-import cl.ravenhill.stickfix.MessageSendingException
-import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
-import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
+import cl.ravenhill.stickfix.exceptions.MessageSendingException
+import cl.ravenhill.stickfix.bot.dispatch.registerRevokeCommand
+import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationNo
+import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationYes
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
-import cl.ravenhill.stickfix.commands.RevokeCommand
 import cl.ravenhill.stickfix.commands.StartCommand
 import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.db.schema.Meta
-import cl.ravenhill.stickfix.db.schema.Users
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
@@ -39,26 +39,24 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("StickfixBot")
 
 /**
- * Implements the `TelegramBot` interface, providing functionalities specific to the Stickfix bot.
- * This class integrates with a `DatabaseService` to manage user data and bot operations,
- * including starting the bot and sending messages to users.
+ * Represents the Stickfix bot, integrating with a `StickfixDatabase` to manage user data and bot operations. This class
+ * provides functionalities to start the bot, send messages to users, and register commands.
  *
  * ## Usage:
- * Instantiate this class with a `DatabaseService` implementation to manage bot interactions and user data.
- * Use the `start` method to begin polling for messages and commands, and `sendMessage` to communicate
- * with users.
+ * Instantiate this class with a `StickfixDatabase` implementation to manage bot interactions and user data. Use the
+ * `start` method to begin polling for messages and commands, and `sendMessage` to communicate with users.
  *
  * ### Example 1: Instantiating and Starting StickfixBot
  * ```kotlin
- * val databaseService = MyDatabaseService()  // Assume MyDatabaseService is an implementation of DatabaseService
+ * val databaseService = StickfixDatabase("jdbcUrl", "driverName")
  * val bot = StickfixBot(databaseService)
- * println(bot.start())  // Outputs: "Bot started" or "Bot already started"
+ * println(bot.start())
  * ```
  *
  * @property databaseService The service used to manage user data and interactions. This service provides the bot's API
  *   token and handles command registration.
  */
-class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
+class StickfixBot(val databaseService: StickfixDatabase) {
     /**
      * Tracks whether the bot has been started.
      */
@@ -79,7 +77,7 @@ class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
      *
      * @return A string message indicating whether the bot was successfully started or if it was already running.
      */
-    override fun start(): String = if (started) {
+    fun start(): String = if (started) {
         "Bot already started"
     } else {
         started = true
@@ -88,15 +86,15 @@ class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
     }
 
     /**
-     * Sends a message to a specific user via the Telegram bot. The message can include Markdown formatting and optional
-     * interactive components such as keyboards.
+     * Sends a message to a specific user via the Telegram bot. The message can include markdown formatting
+     * and optional interactive components such as keyboards.
      *
      * @param user The `ReadUser` instance representing the recipient of the message.
-     * @param message The text of the message to send, which may include Markdown formatting.
+     * @param message The text of the message to send, which may include markdown formatting.
      * @param replyMarkup Optional parameter that allows adding interactive components to the message.
-     * @return BotResult A result object indicating success or failure of the message sending operation.
+     * @return Either a `BotSuccess` or `BotFailure` result indicating the success or failure of the message sending operation.
      */
-    override fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup?) =
+    fun sendMessage(user: ReadUser, message: String, replyMarkup: ReplyMarkup?) =
         _bot.sendMessage(ChatId.fromId(user.userId), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
             ifSuccess = {
                 Either.Left(
@@ -118,7 +116,7 @@ class StickfixBot(override val databaseService: DatabaseService) : TelegramBot {
 }
 
 context(Bot.Builder)
-private fun registerCommands(databaseService: DatabaseService, bot: TelegramBot) {
+private fun registerCommands(databaseService: DatabaseService, bot: StickfixBot) {
     dispatch {
         registerStartCommand(databaseService, bot)
         registerRevokeCommand(databaseService, bot)
@@ -130,7 +128,7 @@ private fun registerCommands(databaseService: DatabaseService, bot: TelegramBot)
 }
 
 context(Dispatcher)
-private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: TelegramBot) {
+private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: StickfixBot) {
     callbackQuery(StartConfirmationYes.name) {
         val user = StickfixUser.from(callbackQuery.from)
         StartConfirmationYes(user, bot, databaseService)
@@ -138,7 +136,7 @@ private fun registerStartConfirmationYes(databaseService: DatabaseService, bot: 
 }
 
 context(Dispatcher)
-private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: TelegramBot) {
+private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: StickfixBot) {
     callbackQuery(StartConfirmationNo.name) {
         val user = StickfixUser.from(callbackQuery.from)
         StartConfirmationNo(user, bot, databaseService)
@@ -146,43 +144,12 @@ private fun registerStartConfirmationNo(databaseService: DatabaseService, bot: T
 }
 
 context(Dispatcher)
-private fun registerRevokeConfirmationYes(databaseService: DatabaseService, bot: TelegramBot) {
-    callbackQuery(RevokeConfirmationYes.name) {
-        val user = transaction {
-            StickfixUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
-        }
-        RevokeConfirmationYes.invoke(user, StickfixBot(databaseService), databaseService)
-    }
-}
-
-context(Dispatcher)
-private fun registerRevokeConfirmationNo(databaseService: DatabaseService, bot: TelegramBot) {
-    callbackQuery(RevokeConfirmationNo.name) {
-        val user = transaction {
-            StickfixUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
-        }
-        RevokeConfirmationNo.invoke(user, StickfixBot(databaseService), databaseService)
-    }
-}
-
-context(Dispatcher)
-private fun registerStartCommand(databaseService: DatabaseService, bot: TelegramBot) {
+private fun registerStartCommand(databaseService: DatabaseService, bot: StickfixBot) {
     command(StartCommand.NAME) {
         logger.info("Received start command from ${message.from}")
         when (val result = StartCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
             is CommandSuccess -> logger.info("Start command executed successfully: $result")
             is CommandFailure -> logger.error("Start command failed: $result")
-        }
-    }
-}
-
-context(Dispatcher)
-private fun registerRevokeCommand(databaseService: DatabaseService, bot: TelegramBot) {
-    command(RevokeCommand.NAME) {
-        logger.info("Received revoke command from ${message.from}")
-        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot, databaseService).execute()) {
-            is CommandSuccess -> logger.info("Revoke command executed successfully: $result")
-            is CommandFailure -> logger.error("Revoke command failed: $result")
         }
     }
 }

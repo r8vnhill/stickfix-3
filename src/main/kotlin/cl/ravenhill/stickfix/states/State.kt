@@ -129,12 +129,9 @@ sealed interface State {
  * @return BotResult The result of the message sending operation, indicating whether the message was
  *         successfully sent or if there was an error during the process.
  */
-fun handleInvalidInput(bot: TelegramBot, context: ReadUser): BotResult<*> {
+fun handleInvalidInput(bot: TelegramBot, context: ReadUser, message: String): BotResult<*> {
     // Log a warning with the user's identification to trace the source of the invalid input
     logger.warn("Invalid input from user ${context.username.ifBlank { context.userId.toString() }}")
-
-    // Define the message to guide the user on how to provide correct input
-    val message = "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
 
     // Send the clarifying message to the user and return the result of this operation
     return bot.sendMessage(context, message).fold(

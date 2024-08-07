@@ -6,7 +6,6 @@ import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
 /**
@@ -50,40 +49,24 @@ data class StartState(override val context: ReadWriteUser) : State {
         return when (cleanText) {
             "YES" -> handleConfirmation(bot)
             "NO" -> handleRejection(bot)
-            else -> handleInvalidInput(bot, context)
+            else -> handleInvalidInput(
+                bot,
+                context,
+                "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
+            )
         }
     }
 
-    private fun handleConfirmation(bot: TelegramBot): BotResult<*> = transaction {
-        logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
-        val message = "You were successfully registered!"
-        bot.sendMessage(context, message).also {
-            context.onIdle(bot)
-            verifyUserState(it.fold(
-                { result -> result },
-                { error -> throw error.data }
-            ), IdleState::class.simpleName!!, context)
-        }.fold(
-            { it },
-            { throw it.data }
-        )
-    }
+    private fun handleConfirmation(bot: TelegramBot): BotResult<*> =
+        handleCommonConfirmation(bot, "You were successfully registered!", context) {
+            logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
+        }
 
-    private fun handleRejection(bot: TelegramBot): BotResult<*> = transaction {
-        logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
-        val message = "You were not registered."
-        bot.sendMessage(context, message).also {
+    private fun handleRejection(bot: TelegramBot): BotResult<*> =
+        handleCommonRejection(bot, "Registration cancelled.", context) {
+            logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
             Users.deleteWhere { id eq context.userId }
-            context.onIdle(bot)
-            verifyUserDeletion(it.fold(
-                { result -> result },
-                { error -> throw error.data }
-            ), context)
-        }.fold(
-            { it },
-            { throw it.data }
-        )
-    }
+        }
 
     override fun toString() = this::class.simpleName!!
 }

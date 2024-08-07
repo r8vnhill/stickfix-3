@@ -95,7 +95,7 @@ private fun registeringUserLog(user: ReadUser) = "Registering new user: ${user.d
  * }
  * ```
  */
-sealed class StartConfirmation : CallbackQueryHandler() {
+sealed class StartConfirmationCallback : CallbackQueryHandler() {
 
     /**
      * Handles sending a message to a user via the Telegram bot and processes the response,
@@ -140,7 +140,7 @@ sealed class StartConfirmation : CallbackQueryHandler() {
  *
  * @property name The simple name of the class, used for logging and reference within the system.
  */
-data object StartConfirmationYes : StartConfirmation() {
+data object StartConfirmationYes : StartConfirmationCallback() {
     override val name = this::class.simpleName!!
 
     /**
@@ -199,7 +199,7 @@ data object StartConfirmationYes : StartConfirmation() {
  *
  * @property name The simple name of this class, used for logging and referencing within the system.
  */
-data object StartConfirmationNo : StartConfirmation() {
+data object StartConfirmationNo : StartConfirmationCallback() {
     override val name = this::class.simpleName!!
 
     /**

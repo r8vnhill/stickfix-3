@@ -54,7 +54,11 @@ data class RevokeState(override val context: ReadWriteUser) : State {
         return when (cleanText) {
             "YES" -> handleConfirmation(bot)
             "NO" -> handleRejection(bot)
-            else -> handleInvalidInput(bot, context)
+            else -> handleInvalidInput(
+                bot,
+                context,
+                "Invalid input. Please type 'yes' or 'no' to confirm or deny revocation."
+            )
         }
     }
 
