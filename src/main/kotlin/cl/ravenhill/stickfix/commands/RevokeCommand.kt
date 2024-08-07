@@ -1,5 +1,6 @@
 package cl.ravenhill.stickfix.commands
 
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
@@ -11,11 +12,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
+import cl.ravenhill.stickfix.db.StickfixDatabase
 
 data class RevokeCommand(
     override val user: ReadUser,
-    override val bot: TelegramBot,
-    override val databaseService: DatabaseService
+    override val bot: StickfixBot,
+    override val databaseService: StickfixDatabase
 ) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 

@@ -5,57 +5,54 @@
 
 package cl.ravenhill.stickfix.commands
 
+import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
- * Defines a common structure for commands within an application that interacts with a Telegram bot.
- * This sealed interface ensures that all implementing command types include essential information
- * about the user issuing the command and the bot that processes it. Being a sealed interface, it
- * enables exhaustive type checking of its subtypes. This is particularly useful for handling
- * commands polymorphically and ensuring type safety across different command implementations.
+ * Represents a command to be executed within the Stickfix bot application. This sealed interface defines the essential
+ * properties and method that any command must implement, ensuring consistent interaction with the bot, the user, and
+ * the database service.
  *
  * ## Usage:
- * Implement this interface in any class that represents a specific type of command issued by a user
- * to a Telegram bot. Each command will have access to the user who initiated it and the bot that
- * will process it, ensuring that all necessary context for command execution is available.
- * Implementing classes must define the `execute` method, which should carry out the command's
- * specific logic and return a `CommandResult` indicating the outcome of the command.
+ * Implement this interface in classes designed to handle specific commands from users. Implementing classes must define
+ * how the command is executed, utilizing the provided bot instance, user information, and database service.
  *
- * ### Example 1: Implementing the Command Interface
+ * ### Example 1: Implementing a Command
  * ```kotlin
- * class StartCommand(override val user: ReadUser, override val bot: TelegramBot) : Command {
+ * data class StartCommand(
+ *     override val user: ReadUser,
+ *     override val bot: StickfixBot,
+ *     override val databaseService: StickfixDatabase
+ * ) : Command {
  *     override fun execute(): CommandResult {
- *         // Logic to start a session or interaction with the bot
- *         return CommandSuccess(user, "Session started successfully.")
+ *         // Command execution logic here
+ *         return CommandSuccess(user, "Start command executed successfully")
  *     }
  * }
  * ```
  *
- * @property user
- *  A `ReadUser` instance representing the user who issues the command. This provides read-only
- *  access to basic user information like username and user ID, ensuring that the command can be
- *  associated with the correct user.
- * @property bot
- *  A `TelegramBot` instance representing the bot that processes the command. This enables the
- *  command to utilize the bot's functionalities, such as sending messages or performing actions on
- *  behalf of the user.
- * @property databaseService
- *  A `DatabaseService` instance representing the service used to interact with the database. This
- *  allows the command to perform database operations, such as storing or retrieving user data.
- *  Implementing classes should provide the necessary database service instance when creating a
- *  command object.
+ * @property user The `ReadUser` instance representing the user issuing the command. This provides read-only access to
+ *   basic user information like username and user ID.
+ * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows  the command to
+ *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
+ * @property databaseService The `StickfixDatabase` instance used to interact with the database. This allows the command
+ *   to perform necessary database operations as part of its execution.
  */
 sealed interface Command {
     val user: ReadUser
-    val bot: TelegramBot
-    val databaseService: DatabaseService
+    val bot: StickfixBot
+    val databaseService: StickfixDatabase
 
     /**
-     * Executes the specific logic associated with the command and returns a `CommandResult`
-     * indicating the outcome. This method is crucial for implementing the operational logic
-     * specific to each command type.
+     * Executes the command, performing the necessary actions and returning the result of the operation. Implementing
+     * classes must define the specific logic for command execution, utilizing the provided bot instance, user
+     * information, and database service.
+     *
+     * @return CommandResult The result of the command execution, indicating success or failure along with any relevant
+     *   messages or data.
      */
     fun execute(): CommandResult
 }
