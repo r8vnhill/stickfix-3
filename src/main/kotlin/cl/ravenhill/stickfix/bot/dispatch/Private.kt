@@ -23,7 +23,7 @@ internal fun registerPrivateModeEnabledCallback(bot: StickfixBot) {
         info(logger) { "Received private mode enabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeEnabledCallback(it.data, bot, bot.databaseService) }
+            ifRight = { PrivateModeEnabledCallback(it.data, bot) }
         )
     }
 }
@@ -40,7 +40,7 @@ internal fun registerPrivateModeDisabledCallback(bot: StickfixBot) {
         info(logger) { "Received private mode disabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeDisabledCallback(it.data, bot, bot.databaseService) }
+            ifRight = { PrivateModeDisabledCallback(it.data, bot) }
         )
     }
 }

@@ -72,11 +72,11 @@ sealed class StartConfirmationCallback : CallbackQueryHandler() {
      */
     protected fun sendMessage(bot: StickfixBot, user: ReadUser, message: String) =
         bot.sendMessage(user, message).fold(
-            ifLeft = { CallbackSuccess(message) },
-            ifRight = { error ->
+            ifLeft = { error ->
                 logger.error(errorSendingMessageLog(user, error))
                 CallbackFailure(error.message)
-            }
+            },
+            ifRight = { CallbackSuccess(message) },
         )
 }
 
@@ -142,7 +142,6 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      */
     override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
         val logMessage = "User ${user.debugInfo} chose not to register."
-        info(logger) { logMessage }
         val message = "You have chosen not to register. Remember you can always register later!"
 
         return sendMessage(bot, user, message).also {

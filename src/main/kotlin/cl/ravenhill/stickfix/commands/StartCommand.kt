@@ -65,8 +65,8 @@ data class StartCommand(override val user: ReadUser, override val bot: StickfixB
     override fun execute(): CommandResult {
         info(logger) { initMessage(user) }
         val result = bot.databaseService.getUser(user).fold(
-            ifLeft = { sendWelcomeBackMessage(user) },
-            ifRight = { sendRegistrationPrompt(user) }
+            ifLeft = { sendRegistrationPrompt(user) },
+            ifRight = { sendWelcomeBackMessage(user) }
         )
         info(logger) { "Start command result: $result" }
         return result
