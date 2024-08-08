@@ -33,24 +33,24 @@ private val welcomeMessage = """
  * specific user. This message is primarily used for logging purposes to trace the actions being
  * taken on behalf of a user at the start of a command execution.
  *
- * @param user The `ReadUser` instance for whom the start command is being executed.
+ * @param user The `StickfixUser` instance for whom the start command is being executed.
  * @return
  *  A string formatted to indicate that a start command is being executed for the given user,
  *  utilizing their debug information for identification.
  */
-private fun initMessage(user: ReadUser) = "Executing start command for user ${user.debugInfo}"
+private fun initMessage(user: StickfixUser) = "Executing start command for user ${user.debugInfo}"
 
 /**
  * Represents the command to start the Stickfix bot for a user. This command handles checking if the user is already
  * registered and sends either a welcome back message or a registration prompt accordingly. It implements the `Command`
  * interface, utilizing the provided bot instance, user information, and database service.
  *
- * @property user The `ReadUser` instance representing the user issuing the command. This provides read-only access to
+ * @property user The `StickfixUser` instance representing the user issuing the command. This provides read-only access to
  *   basic user information like username and user ID.
  * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows the command to
  *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
  */
-data class StartCommand(override val user: ReadUser, override val bot: StickfixBot) : Command {
+data class StartCommand(override val user: StickfixUser, override val bot: StickfixBot) : Command {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     /**
@@ -73,10 +73,10 @@ data class StartCommand(override val user: ReadUser, override val bot: StickfixB
     /**
      * Sends a welcome back message to the user if they are already registered.
      *
-     * @param user The `ReadUser` instance representing the user.
+     * @param user The `StickfixUser` instance representing the user.
      * @return CommandResult The result of the message sending operation, indicating success or failure.
      */
-    private fun sendWelcomeBackMessage(user: ReadUser) = bot.sendMessage(user, "Welcome back!").fold(
+    private fun sendWelcomeBackMessage(user: StickfixUser) = bot.sendMessage(user, "Welcome back!").fold(
         ifLeft = { CommandFailure(user, "Failed to send welcome back message.") },
         ifRight = { CommandSuccess(user, "Welcome back message sent successfully.") }
     )
@@ -84,10 +84,10 @@ data class StartCommand(override val user: ReadUser, override val bot: StickfixB
     /**
      * Sends a registration prompt to the user if they are not already registered.
      *
-     * @param user The `ReadUser` instance representing the user.
+     * @param user The `StickfixUser` instance representing the user.
      * @return CommandResult The result of the message sending operation, indicating success or failure.
      */
-    private fun sendRegistrationPrompt(user: ReadUser): CommandResult {
+    private fun sendRegistrationPrompt(user: StickfixUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
         return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
             ifLeft = {

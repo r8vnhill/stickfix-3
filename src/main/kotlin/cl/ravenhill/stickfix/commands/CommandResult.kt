@@ -28,7 +28,7 @@ package cl.ravenhill.stickfix.commands
  * ```
  *
  * @property user
- *  A `ReadUser` instance representing the user associated with the command result. This provides
+ *  A `StickfixUser` instance representing the user associated with the command result. This provides
  *  read-only access to basic user information, ensuring that the result can be linked back to the
  *  appropriate user.
  * @property message
@@ -36,7 +36,7 @@ package cl.ravenhill.stickfix.commands
  *  or additional information about the result.
  */
 sealed interface CommandResult {
-    val user: ReadUser
+    val user: StickfixUser
     val message: String
 }
 
@@ -47,7 +47,7 @@ sealed interface CommandResult {
  * @param message A descriptive message about the success of the command.
  */
 data class CommandSuccess(
-    override val user: ReadUser,
+    override val user: StickfixUser,
     override val message: String
 ) : CommandResult
 
@@ -58,6 +58,6 @@ data class CommandSuccess(
  * @param message A descriptive message about the failure of the command.
  */
 data class CommandFailure(
-    override val user: ReadUser,
+    override val user: StickfixUser,
     override val message: String
 ) : CommandResult

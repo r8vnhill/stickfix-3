@@ -16,6 +16,7 @@ import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationYes
 import cl.ravenhill.stickfix.bot.dispatch.registerStartCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationYes
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.exceptions.MessageSendingException
 import com.github.kotlintelegrambot.Bot
@@ -68,14 +69,14 @@ class StickfixBot(val databaseService: StickfixDatabase) {
      * Sends a message to a specific user via the Telegram bot. The message can include Markdown formatting
      * and optional interactive components such as keyboards.
      *
-     * @param user The `ReadUser` instance representing the recipient of the message.
+     * @param user The `StickfixUser` instance representing the recipient of the message.
      * @param message The text of the message to send, which may include Markdown formatting.
      * @param replyMarkup Optional parameter that allows adding interactive components to the message.
      * @return Either a `BotSuccess` or `BotFailure` result indicating the success or failure of the message sending
      *   operation.
      */
     fun sendMessage(
-        user: ReadUser,
+        user: StickfixUser,
         message: String,
         replyMarkup: ReplyMarkup? = null,
     ): Either<BotFailure<MessageSendingException>, BotSuccess<String>> =

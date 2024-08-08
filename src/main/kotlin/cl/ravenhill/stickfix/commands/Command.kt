@@ -6,7 +6,6 @@
 package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.bot.TelegramBot
 import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.StickfixDatabase
 
@@ -15,13 +14,13 @@ import cl.ravenhill.stickfix.db.StickfixDatabase
  * properties and method that any command must implement, ensuring consistent interaction with the bot, the user, and
  * the database service.
  *
- * @property user The `ReadUser` instance representing the user issuing the command. This provides read-only access to
+ * @property user The `StickfixUser` instance representing the user issuing the command. This provides read-only access to
  *   basic user information like username and user ID.
  * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows  the command to
  *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
  */
 sealed interface Command {
-    val user: ReadUser
+    val user: StickfixUser
     val bot: StickfixBot
 
     /**

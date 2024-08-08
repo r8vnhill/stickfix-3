@@ -15,11 +15,11 @@ interface DatabaseService {
 
     fun init(): DatabaseService
 
-    fun getUser(user: ReadUser): DatabaseOperationResult<ReadUser?>
+    fun getUser(user: StickfixUser): DatabaseOperationResult<StickfixUser?>
 
-    fun addUser(user: ReadUser): DatabaseOperationResult<ReadUser>
+    fun addUser(user: StickfixUser): DatabaseOperationResult<StickfixUser>
 
-    fun deleteUser(user: ReadUser): DatabaseOperationResult<ReadUser>
+    fun deleteUser(user: StickfixUser): DatabaseOperationResult<StickfixUser>
 
     companion object {
         const val API_TOKEN_KEY = "API_KEY"

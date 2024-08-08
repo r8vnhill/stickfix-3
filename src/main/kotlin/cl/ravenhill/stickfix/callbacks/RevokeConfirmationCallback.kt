@@ -3,6 +3,7 @@ package cl.ravenhill.stickfix.callbacks
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info
@@ -28,11 +29,11 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
     /**
      * Handles the revocation confirmation by deleting the user from the database and sending a confirmation message.
      *
-     * @param user The `ReadUser` instance representing the user who confirmed the revocation.
+     * @param user The `StickfixUser` instance representing the user who confirmed the revocation.
      * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of the revocation confirmation, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
+    override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
         bot.databaseService.deleteUser(user)
         info(logger) { "User ${user.username} has been revoked." }
         return bot.sendMessage(user, "Your registration has been revoked.").fold(
@@ -61,12 +62,11 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
     /**
      * Handles the revocation rejection by retaining the user's registration and sending a confirmation message.
      *
-     * @param user The `ReadUser` instance representing the user who rejected the revocation.
+     * @param user The `StickfixUser` instance representing the user who rejected the revocation.
      * @param bot The `StickfixBot` instance used to send messages to the user.
-     * @param databaseService The `StickfixDatabase` instance for accessing and updating user data.
      * @return CallbackResult The result of the revocation rejection, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot) = transaction {
+    override fun invoke(user: StickfixUser, bot: StickfixBot) = transaction {
         info(logger) { "User ${user.username} has chosen not to revoke." }
         bot.sendMessage(user, "Your registration has not been revoked.").fold(
             ifLeft = {

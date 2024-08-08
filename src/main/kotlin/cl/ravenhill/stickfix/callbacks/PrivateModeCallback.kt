@@ -4,6 +4,7 @@ import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.PrivateModeDisabledCallback.name
 import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback.name
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.DatabaseOperationSuccess
 
 /**
@@ -27,15 +28,15 @@ data object PrivateModeEnabledCallback : PrivateModeCallback() {
      * Handles the enabling of private mode by updating the user's private mode setting in the database and sending a
      * confirmation message.
      *
-     * @param user The `ReadUser` instance representing the user who enabled private mode.
+     * @param user The `StickfixUser` instance representing the user who enabled private mode.
      * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of enabling private mode, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot) =
-        when (bot.databaseService.setPrivateMode(user, PrivateMode.ENABLED)) {
-            is DatabaseOperationSuccess<*> -> CallbackSuccess("Private mode enabled.")
-            else -> CallbackFailure("Failed to enable private mode.")
-        }
+    override fun invoke(user: StickfixUser, bot: StickfixBot) =
+        bot.databaseService.setPrivateMode(user, PrivateMode.ENABLED).fold(
+            ifLeft = { CallbackFailure("Failed to enable private mode.") },
+            ifRight = { CallbackSuccess("Private mode enabled.") },
+        )
 }
 
 /**
@@ -52,11 +53,11 @@ data object PrivateModeDisabledCallback : PrivateModeCallback() {
      * Handles the disabling of private mode by updating the user's private mode setting in the database and sending a
      * confirmation message.
      *
-     * @param user The `ReadUser` instance representing the user who disabled private mode.
+     * @param user The `StickfixUser` instance representing the user who disabled private mode.
      * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of disabling private mode, indicating success or failure.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot) =
+    override fun invoke(user: StickfixUser, bot: StickfixBot) =
         when (bot.databaseService.setPrivateMode(user, PrivateMode.DISABLED)) {
             is DatabaseOperationSuccess<*> -> CallbackSuccess("Private mode disabled.")
             else -> CallbackFailure("Failed to disable private mode.")

@@ -75,12 +75,12 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
 
     /**
-     * Retrieves user information based on the given `ReadUser` instance.
+     * Retrieves user information based on the given `StickfixUser` instance.
      *
-     * @param user The `ReadUser` instance representing the user.
+     * @param user The `StickfixUser` instance representing the user.
      * @return The result of the query operation, indicating success or failure, along with the retrieved user data.
      */
-    fun getUser(user: ReadUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
+    fun getUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         getUser(user.userId)
 
     /**
@@ -99,10 +99,10 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     /**
      * Adds a new user to the database.
      *
-     * @param user The `ReadUser` instance representing the new user.
+     * @param user The `StickfixUser` instance representing the new user.
      * @return The result of the add operation, indicating success or failure, along with the added user data.
      */
-    fun addUser(user: ReadUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
+    fun addUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
             Users.insert {
                 it[chatId] = user.userId
@@ -113,11 +113,11 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
 
     /**
-     * Deletes a user from the database based on the given `ReadUser` instance.
+     * Deletes a user from the database based on the given `StickfixUser` instance.
      *
-     * @param user The `ReadUser` instance representing the user to be deleted.
+     * @param user The `StickfixUser` instance representing the user to be deleted.
      */
-    fun deleteUser(user: ReadUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<ReadUser>> =
+    fun deleteUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
             Users.deleteWhere { id eq user.userId }
             user
@@ -126,12 +126,12 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     /**
      * Sets the private mode for a user in the database.
      *
-     * @param user The `ReadUser` instance representing the user.
+     * @param user The `StickfixUser` instance representing the user.
      * @param mode The `PrivateMode` enum value indicating whether private mode is enabled or disabled.
      * @return The result of the update operation, indicating success or failure, along with the new private mode
      *   setting.
      */
-    fun setPrivateMode(user: ReadUser, mode: PrivateMode) = executeDatabaseOperationSafely(database) {
+    fun setPrivateMode(user: StickfixUser, mode: PrivateMode) = executeDatabaseOperationSafely(database) {
         Users.update({ Users.id eq user.userId }) {
             it[privateMode] = when (mode) {
                 PrivateMode.ENABLED -> true

@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory
  * database and, if so, sends a confirmation prompt to revoke their registration. It implements the `Command` interface,
  * utilizing the provided bot instance, user information, and database service.
  *
- * @property user The `ReadUser` instance representing the user issuing the command. This provides read-only access to
+ * @property user The `StickfixUser` instance representing the user issuing the command. This provides read-only access to
  *   basic user information like username and user ID.
  * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows the command to
  *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
  */
-data class RevokeCommand(override val user: ReadUser, override val bot: StickfixBot) : Command {
+data class RevokeCommand(override val user: StickfixUser, override val bot: StickfixBot) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**

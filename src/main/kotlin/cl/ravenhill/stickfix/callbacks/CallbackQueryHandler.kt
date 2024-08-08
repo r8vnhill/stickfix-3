@@ -6,6 +6,7 @@
 package cl.ravenhill.stickfix.callbacks
 
 import cl.ravenhill.stickfix.bot.StickfixBot
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,7 +33,7 @@ sealed class CallbackQueryHandler {
      * Handles the callback query, performing the necessary actions and returning the result of the operation.
      * Subclasses must implement this operator function to define the specific logic for handling the callback query.
      *
-     * @param user The `ReadUser` instance representing the user initiating the callback query. This provides read-only
+     * @param user The `StickfixUser` instance representing the user initiating the callback query. This provides read-only
      *   access to basic user information like username and user ID.
      * @param bot The `StickfixBot` instance representing the bot that processes the callback query. This allows the
      *   handler to interact with the bot's functionalities, such as sending messages or performing actions on behalf of
@@ -40,5 +41,5 @@ sealed class CallbackQueryHandler {
      * @return CallbackResult The result of handling the callback query, indicating success or failure along with any
      *   relevant messages or data.
      */
-    abstract operator fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult
+    abstract operator fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult
 }
