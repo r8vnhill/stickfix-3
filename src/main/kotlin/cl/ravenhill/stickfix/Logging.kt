@@ -7,7 +7,7 @@ package cl.ravenhill.stickfix
  * @param logger The SLF4J logger instance used to log the message.
  * @param lazyMessage A lambda function that generates the message to be logged.
  */
-inline fun info(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.info(lazyMessage())
+inline fun logInfo(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.info(lazyMessage())
 
 /**
  * Logs a debug message using the provided SLF4J logger. The message is generated lazily using the provided lambda.
@@ -15,7 +15,7 @@ inline fun info(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.in
  * @param logger The SLF4J logger instance used to log the message.
  * @param lazyMessage A lambda function that generates the message to be logged.
  */
-inline fun debug(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.debug(lazyMessage())
+inline fun logDebug(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.debug(lazyMessage())
 
 /**
  * Logs an error message using the provided SLF4J logger. The message is generated lazily using the provided lambda.
@@ -23,7 +23,7 @@ inline fun debug(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.d
  * @param logger The SLF4J logger instance used to log the message.
  * @param lazyMessage A lambda function that generates the message to be logged.
  */
-inline fun error(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.error(lazyMessage())
+inline fun logError(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.error(lazyMessage())
 
 /**
  * Logs a warning message using the provided SLF4J logger. The message is generated lazily using the provided lambda.
@@ -31,7 +31,7 @@ inline fun error(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.e
  * @param logger The SLF4J logger instance used to log the message.
  * @param lazyMessage A lambda function that generates the message to be logged.
  */
-inline fun warn(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.warn(lazyMessage())
+inline fun logWarn(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.warn(lazyMessage())
 
 /**
  * Logs a trace message using the provided SLF4J logger. The message is generated lazily using the provided lambda.
@@ -39,4 +39,4 @@ inline fun warn(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.wa
  * @param logger The SLF4J logger instance used to log the message.
  * @param lazyMessage A lambda function that generates the message to be logged.
  */
-inline fun trace(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.trace(lazyMessage())
+inline fun logTrace(logger: org.slf4j.Logger, lazyMessage: () -> String) = logger.trace(lazyMessage())

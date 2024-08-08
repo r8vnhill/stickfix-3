@@ -23,12 +23,12 @@ fun main() {
         val (databaseService, dbInitTime) = timed {
             initDatabase(StickfixDatabase(JDBC_URL, JDBC_DRIVER))
         }
-        info(logger) { "Database initialized in $dbInitTime ms" }
+        logInfo(logger) { "Database initialized in $dbInitTime ms" }
         val (bot, botSetupTime) = timed {
             StickfixBot(databaseService)
         }
-        info(logger) { "Bot setup in $botSetupTime ms" }
-        bot.start().also { info(logger) { it } }
+        logInfo(logger) { "Bot setup in $botSetupTime ms" }
+        bot.start().also { logInfo(logger) { it } }
     }
 }
 
@@ -43,7 +43,7 @@ private fun initDatabase(db: StickfixDatabase): StickfixDatabase {
     logger.info("Initializing database")
     return db.init().fold(
         ifLeft = {
-            error(logger) { "Failed to initialize database: $it" }
+            logError(logger) { "Failed to initialize database: $it" }
             throw it.data
         },
         ifRight = { it.data }

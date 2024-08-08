@@ -8,7 +8,7 @@ package cl.ravenhill.stickfix.commands
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
@@ -61,12 +61,12 @@ data class StartCommand(override val user: StickfixUser, override val bot: Stick
      *   messages.
      */
     override fun execute(): CommandResult {
-        info(logger) { initMessage(user) }
+        logInfo(logger) { initMessage(user) }
         val result = bot.databaseService.getUser(user).fold(
             ifLeft = { sendRegistrationPrompt(user) },
             ifRight = { sendWelcomeBackMessage(user) }
         )
-        info(logger) { "Start command result: $result" }
+        logInfo(logger) { "Start command result: $result" }
         return result
     }
 

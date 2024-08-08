@@ -4,9 +4,8 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.db.StickfixDatabase
-import cl.ravenhill.stickfix.error
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
@@ -35,14 +34,14 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
      */
     override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
         bot.databaseService.deleteUser(user)
-        info(logger) { "User ${user.username} has been revoked." }
+        logInfo(logger) { "User ${user.username} has been revoked." }
         return bot.sendMessage(user, "Your registration has been revoked.").fold(
             ifLeft = {
-                info(logger) { "User ${user.username} has been revoked." }
+                logInfo(logger) { "User ${user.username} has been revoked." }
                 CallbackSuccess("Your registration has been revoked.")
             },
             ifRight = {
-                error(logger) { "Failed to send revocation message to user ${user.username}" }
+                logError(logger) { "Failed to send revocation message to user ${user.username}" }
                 CallbackFailure(it.message)
             }
         )
@@ -67,14 +66,14 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
      * @return CallbackResult The result of the revocation rejection, indicating success or failure.
      */
     override fun invoke(user: StickfixUser, bot: StickfixBot) = transaction {
-        info(logger) { "User ${user.username} has chosen not to revoke." }
+        logInfo(logger) { "User ${user.username} has chosen not to revoke." }
         bot.sendMessage(user, "Your registration has not been revoked.").fold(
             ifLeft = {
-                info(logger) { "User ${user.username} has chosen not to revoke." }
+                logInfo(logger) { "User ${user.username} has chosen not to revoke." }
                 CallbackSuccess("Your registration has not been revoked.")
             },
             ifRight = {
-                error(logger) { "Failed to send revocation rejection message to user ${user.username}" }
+                logError(logger) { "Failed to send revocation rejection message to user ${user.username}" }
                 CallbackFailure(it.message)
             }
         )

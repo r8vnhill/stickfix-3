@@ -7,8 +7,8 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.StartCommand
-import cl.ravenhill.stickfix.error
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
@@ -55,10 +55,10 @@ internal fun registerStartConfirmationNo(bot: StickfixBot) {
 context(Dispatcher)
 internal fun registerStartCommand(bot: StickfixBot) {
     command(StartCommand.NAME) {
-        info(logger) { "Received start command from ${message.from}" }
+        logInfo(logger) { "Received start command from ${message.from}" }
         when (val result = StartCommand(StickfixUser.from(message.from!!), bot).execute()) {
-            is CommandSuccess -> info(logger) { "Start command executed successfully: $result" }
-            is CommandFailure -> error(logger) { "Start command failed: $result" }
+            is CommandSuccess -> logInfo(logger) { "Start command executed successfully: $result" }
+            is CommandFailure -> logError(logger) { "Start command failed: $result" }
         }
     }
 }

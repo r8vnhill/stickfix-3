@@ -5,7 +5,7 @@ import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.utils.flatten
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -30,7 +30,7 @@ fun handleCommonConfirmation(
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
     additionalOperations()
-    info(logger) { "User ${user.debugInfo} confirmed action" }
+    logInfo(logger) { "User ${user.debugInfo} confirmed action" }
     bot.sendMessage(user, message).fold(
         ifLeft = {
             BotFailure("Failed to send confirmation message", it)
@@ -59,7 +59,7 @@ fun handleCommonRejection(
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
     additionalOperations()
-    info(logger) { "User ${user.debugInfo} denied action" }
+    logInfo(logger) { "User ${user.debugInfo} denied action" }
     bot.sendMessage(user, message).also {
         user.onIdle(bot)
         verifyUserDeletion(it.flatten(), user)

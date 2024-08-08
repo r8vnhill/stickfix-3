@@ -3,8 +3,8 @@ package cl.ravenhill.stickfix.bot.dispatch
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.PrivateModeDisabledCallback
 import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback
-import cl.ravenhill.stickfix.error
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import org.slf4j.LoggerFactory
@@ -20,9 +20,9 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Private")
 context(Dispatcher)
 internal fun registerPrivateModeEnabledCallback(bot: StickfixBot) {
     callbackQuery(PrivateModeEnabledCallback.name) {
-        info(logger) { "Received private mode enabled callback" }
+        logInfo(logger) { "Received private mode enabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
+            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
             ifRight = { PrivateModeEnabledCallback(it.data, bot) }
         )
     }
@@ -37,9 +37,9 @@ internal fun registerPrivateModeEnabledCallback(bot: StickfixBot) {
 context(Dispatcher)
 internal fun registerPrivateModeDisabledCallback(bot: StickfixBot) {
     callbackQuery(PrivateModeDisabledCallback.name) {
-        info(logger) { "Received private mode disabled callback" }
+        logInfo(logger) { "Received private mode disabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
+            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
             ifRight = { PrivateModeDisabledCallback(it.data, bot) }
         )
     }

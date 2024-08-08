@@ -16,7 +16,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.exceptions.DatabaseOperationException
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.states.IdleState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -151,7 +151,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      */
     inline fun <reified T> setUserState(userId: Long) = executeDatabaseOperationSafely(database) {
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
-        info(logger) { "Setting user $userId state to ${T::class.simpleName}" }
+        logInfo(logger) { "Setting user $userId state to ${T::class.simpleName}" }
         Users.update({ Users.id eq userId }) {
             it[state] = T::class.simpleName!!
         }

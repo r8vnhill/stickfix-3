@@ -10,8 +10,8 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.error
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 
 /**
  * A constant representing the welcome message sent to users when they successfully register  with
@@ -107,14 +107,14 @@ data object StartConfirmationYes : StartConfirmationCallback() {
         val databaseService = bot.databaseService
         return databaseService.getUser(user).fold(
             ifLeft = { error ->
-                error(logger) { "Failed to retrieve user data for ${user.debugInfo}: ${error.message}" }
-                info(logger) { registeringUserLog(user) }
+                logError(logger) { "Failed to retrieve user data for ${user.debugInfo}: ${error.message}" }
+                logInfo(logger) { registeringUserLog(user) }
                 databaseService.addUser(user)
                 val message = WELCOME_MESSAGE
                 sendMessage(bot, user, message)
             },
             ifRight = { userResult ->
-                info(logger) { "Retrieved user data for ${user.debugInfo}: ${userResult.data}" }
+                logInfo(logger) { "Retrieved user data for ${user.debugInfo}: ${userResult.data}" }
                 sendMessage(bot, user, ALREADY_REGISTERED_MESSAGE)
             }
         )
@@ -143,13 +143,13 @@ data object StartConfirmationNo : StartConfirmationCallback() {
     override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
         user.onRejection(bot)
         val logMessage = "User ${user.debugInfo} chose not to register."
-        info(logger) { logMessage }
+        logInfo(logger) { logMessage }
         val message = "You have chosen not to register. Remember you can always register later!"
 
         return sendMessage(bot, user, message).also {
             if (it is CallbackSuccess) {
                 user.onIdle(bot)
-                info(logger) { "User ${user.debugInfo} set to idle state" }
+                logInfo(logger) { "User ${user.debugInfo} set to idle state" }
             }
         }
     }

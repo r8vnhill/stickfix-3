@@ -11,8 +11,8 @@ import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
-import cl.ravenhill.stickfix.debug
-import cl.ravenhill.stickfix.error
+import cl.ravenhill.stickfix.logDebug
+import cl.ravenhill.stickfix.logError
 import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -49,7 +49,7 @@ sealed interface State {
      *                          is not allowed or valid in the current context.
      */
     fun onStart(bot: StickfixBot): TransitionResult {
-        error(logger) { "User ${user.debugInfo} attempted to start from state ${javaClass.simpleName}" }
+        logError(logger) { "User ${user.debugInfo} attempted to start from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
 
@@ -61,7 +61,7 @@ sealed interface State {
      * @return BotResult<*> The result of processing the input, indicating success or failure.
      */
     fun process(text: String?, bot: StickfixBot): BotResult<*> {
-        debug(logger) { "Processing input in state ${javaClass.simpleName}" }
+        logDebug(logger) { "Processing input in state ${javaClass.simpleName}" }
         return BotSuccess("Processed input in state ${javaClass.simpleName}", text)
     }
 
@@ -84,7 +84,7 @@ sealed interface State {
      * @return TransitionResult Indicates the failure to transition from the current state during revocation.
      */
     fun onRevoke(bot: StickfixBot): TransitionResult {
-        error(logger) { "User ${user.debugInfo} attempted to revoke from state ${javaClass.simpleName}" }
+        logError(logger) { "User ${user.debugInfo} attempted to revoke from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
 
@@ -97,7 +97,7 @@ sealed interface State {
      * @return `TransitionResult` indicating the failure to transition from the current state.
      */
     fun onRejection(bot: StickfixBot): TransitionResult {
-        error(logger) { "User ${user.debugInfo} attempted to reject from state ${javaClass.simpleName}" }
+        logError(logger) { "User ${user.debugInfo} attempted to reject from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
 }

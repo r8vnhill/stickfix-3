@@ -7,8 +7,8 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.RevokeCommand
-import cl.ravenhill.stickfix.error
-import cl.ravenhill.stickfix.info
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
@@ -26,10 +26,10 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Revoke")
 context(Dispatcher)
 internal fun registerRevokeCommand(bot: StickfixBot) {
     command(RevokeCommand.NAME) {
-        info(logger) { "Received revoke command" }
+        logInfo(logger) { "Received revoke command" }
         when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot).execute()) {
-            is CommandSuccess -> info(logger) { "Revoke command executed successfully: $result" }
-            is CommandFailure -> error(logger) { "Revoke command failed: $result" }
+            is CommandSuccess -> logInfo(logger) { "Revoke command executed successfully: $result" }
+            is CommandFailure -> logError(logger) { "Revoke command failed: $result" }
         }
     }
 }
@@ -45,7 +45,7 @@ context(Dispatcher)
 internal fun registerRevokeConfirmationYes(bot: StickfixBot) {
     callbackQuery(RevokeConfirmationYes.name) {
         bot.databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
+            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
             ifRight = { RevokeConfirmationYes(it.data, bot) }
         )
     }
@@ -62,7 +62,7 @@ context(Dispatcher)
 internal fun registerRevokeConfirmationNo(bot: StickfixBot) {
     callbackQuery(RevokeConfirmationNo.name) {
         bot.databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { error(logger) { "Failed to retrieve user: ${it.message}" } },
+            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
             ifRight = { RevokeConfirmationNo(it.data, bot) }
         )
     }
