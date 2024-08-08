@@ -5,8 +5,6 @@
 
 package cl.ravenhill.stickfix.commands
 
-import cl.ravenhill.stickfix.chat.ReadUser
-
 /**
  * Represents the result of a command executed within an application, encapsulating the outcome
  * along with associated user information and a message describing the result. As a sealed

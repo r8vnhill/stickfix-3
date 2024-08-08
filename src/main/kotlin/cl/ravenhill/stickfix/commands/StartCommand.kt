@@ -8,8 +8,6 @@ package cl.ravenhill.stickfix.commands
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
-import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.info
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
@@ -92,7 +90,10 @@ data class StartCommand(override val user: ReadUser, override val bot: StickfixB
     private fun sendRegistrationPrompt(user: ReadUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
         return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
-            ifLeft = { CommandFailure(user, "Failed to send registration prompt.") },
+            ifLeft = {
+                user.onIdle(bot)
+                CommandFailure(user, "Failed to send registration prompt.")
+            },
             ifRight = {
                 user.onStart(bot)
                 CommandSuccess(user, "Registration prompt sent.")

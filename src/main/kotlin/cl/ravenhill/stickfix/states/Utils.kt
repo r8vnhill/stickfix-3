@@ -1,8 +1,10 @@
 package cl.ravenhill.stickfix.states
 
+import cl.ravenhill.stickfix.bot.BotFailure
 import cl.ravenhill.stickfix.bot.BotResult
+import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadWriteUser
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.info
 import cl.ravenhill.stickfix.utils.flatten
 import org.jetbrains.exposed.sql.Transaction
@@ -17,22 +19,27 @@ private val logger = LoggerFactory.getLogger("states.Utils")
  *
  * @param bot The `StickfixBot` instance used to send messages to the user.
  * @param message The confirmation message to be sent to the user.
- * @param context The `ReadWriteUser` instance representing the user who confirmed the action.
+ * @param user The `StickfixUser` instance representing the user who confirmed the action.
  * @param additionalOperations The additional operations to be performed within a database transaction.
  * @return BotResult<*> The result of the confirmation handling, indicating success or failure.
  */
 fun handleCommonConfirmation(
     bot: StickfixBot,
     message: String,
-    context: ReadWriteUser,
+    user: StickfixUser,
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
     additionalOperations()
-    info(logger) { "User ${context.username.ifBlank { context.userId.toString() }} confirmed action" }
-    bot.sendMessage(context, message).also { result ->
-        context.onIdle(bot)
-        verifyUserState(result.flatten(), IdleState::class.simpleName!!, context)
-    }.flatten()
+    info(logger) { "User ${user.debugInfo} confirmed action" }
+    bot.sendMessage(user, message).fold(
+        ifLeft = {
+            BotFailure("Failed to send confirmation message", it)
+        },
+        ifRight = {
+            user.onIdle(bot)
+            BotSuccess("Confirmation message sent", it)
+        }
+    )
 }
 
 /**
@@ -41,20 +48,20 @@ fun handleCommonConfirmation(
  *
  * @param bot The `StickfixBot` instance used to send messages to the user.
  * @param message The rejection message to be sent to the user.
- * @param context The `ReadWriteUser` instance representing the user who denied the action.
+ * @param user The `StickfixUser` instance representing the user who denied the action.
  * @param additionalOperations The additional operations to be performed within a database transaction.
  * @return BotResult<*> The result of the rejection handling, indicating success or failure.
  */
 fun handleCommonRejection(
     bot: StickfixBot,
     message: String,
-    context: ReadWriteUser,
+    user: StickfixUser,
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
     additionalOperations()
-    info(logger) { "User ${context.username.ifBlank { context.userId.toString() }} denied action" }
-    bot.sendMessage(context, message).also {
-        context.onIdle(bot)
-        verifyUserDeletion(it.flatten(), context)
+    info(logger) { "User ${user.debugInfo} denied action" }
+    bot.sendMessage(user, message).also {
+        user.onIdle(bot)
+        verifyUserDeletion(it.flatten(), user)
     }.flatten()
 }

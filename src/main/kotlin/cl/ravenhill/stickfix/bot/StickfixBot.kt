@@ -16,7 +16,6 @@ import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationYes
 import cl.ravenhill.stickfix.bot.dispatch.registerStartCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationYes
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.exceptions.MessageSendingException
 import com.github.kotlintelegrambot.Bot

@@ -6,7 +6,6 @@
 package cl.ravenhill.stickfix.bot
 
 import cl.ravenhill.stickfix.bot.TelegramBot.Companion.messageSentTo
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 

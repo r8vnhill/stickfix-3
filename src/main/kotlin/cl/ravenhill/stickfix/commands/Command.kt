@@ -7,7 +7,6 @@ package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.bot.TelegramBot
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
 import cl.ravenhill.stickfix.db.StickfixDatabase
 

@@ -9,7 +9,6 @@ import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info
 
@@ -141,13 +140,15 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      *   appropriate messages delivered via the bot.
      */
     override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
+        user.onRejection(bot)
         val logMessage = "User ${user.debugInfo} chose not to register."
+        info(logger) { logMessage }
         val message = "You have chosen not to register. Remember you can always register later!"
 
         return sendMessage(bot, user, message).also {
             if (it is CallbackSuccess) {
-                // Log successful confirmation of the action to provide clear audit trails
-                info(logger) { logMessage } // Repeat log only on success to confirm action
+                user.onIdle(bot)
+                info(logger) { "User ${user.debugInfo} set to idle state" }
             }
         }
     }

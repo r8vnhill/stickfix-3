@@ -5,7 +5,6 @@
 
 package cl.ravenhill.stickfix.db
 
-import cl.ravenhill.stickfix.chat.ReadUser
 import org.jetbrains.exposed.sql.Database
 
 interface DatabaseService {

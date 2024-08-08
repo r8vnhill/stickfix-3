@@ -9,9 +9,10 @@ import cl.ravenhill.stickfix.bot.BotFailure
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadUser
-import cl.ravenhill.stickfix.chat.ReadWriteUser
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
+import cl.ravenhill.stickfix.debug
+import cl.ravenhill.stickfix.error
 import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,15 +25,15 @@ private val logger = LoggerFactory.getLogger("states")
  * for exhaustive checking of state types. Each state encapsulates its own behavior and context, facilitating a robust
  * and scalable state management system.
  *
- * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows
- *                   the state to have direct access to and modify user data as necessary during state transitions.
+ * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows
+ *   the state to have direct access to and modify user data as necessary during state transitions.
  */
 sealed interface State {
-    val context: ReadWriteUser
+    val user: StickfixUser
 
     /**
-     * A logger instance for logging state-related actions. This logger is private to the state and
-     * is used to record activities such as transitions and errors.
+     * A logger instance for logging state-related actions. This logger is private to the state and is used to record
+     * activities such as transitions and errors.
      */
     private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
 
@@ -48,10 +49,7 @@ sealed interface State {
      *                          is not allowed or valid in the current context.
      */
     fun onStart(bot: StickfixBot): TransitionResult {
-        logger.warn(
-            "User ${
-                context.username.ifBlank { context.userId.toString() }
-            } attempted to start from state ${javaClass.simpleName}")
+        error(logger) { "User ${user.debugInfo} attempted to start from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
 
@@ -63,8 +61,8 @@ sealed interface State {
      * @return BotResult<*> The result of processing the input, indicating success or failure.
      */
     fun process(text: String?, bot: StickfixBot): BotResult<*> {
-        logger.debug("Processing input in state ${javaClass.simpleName}")
-        return BotSuccess("Processed input in state ${javaClass.simpleName}", true)
+        debug(logger) { "Processing input in state ${javaClass.simpleName}" }
+        return BotSuccess("Processed input in state ${javaClass.simpleName}", text)
     }
 
     /**
@@ -74,8 +72,9 @@ sealed interface State {
      * @return TransitionResult Indicates the success of transitioning to the idle state.
      */
     fun onIdle(bot: StickfixBot): TransitionResult {
-        context.state = IdleState(context)
-        return TransitionSuccess(context.state)
+        user.state = IdleState(user)
+        bot.databaseService.setUserState<IdleState>(user.userId)
+        return TransitionSuccess(user.state)
     }
 
     /**
@@ -85,9 +84,7 @@ sealed interface State {
      * @return TransitionResult Indicates the failure to transition from the current state during revocation.
      */
     fun onRevoke(bot: StickfixBot): TransitionResult {
-        logger.warn(
-            "User ${context.username.ifBlank { context.userId }} tried to revoke from state ${javaClass.simpleName}"
-        )
+        error(logger) { "User ${user.debugInfo} attempted to revoke from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
 }
@@ -96,13 +93,13 @@ sealed interface State {
  * Handles invalid input from the user, sending a clarifying message and logging the event.
  *
  * @param bot The `StickfixBot` instance used to send messages to the user.
- * @param context The `ReadUser` instance representing the user who provided the invalid input.
+ * @param user The `StickfixUser` instance representing the user who provided the invalid input.
  * @param message The message to be sent to the user, clarifying the expected input.
  * @return BotResult<*> The result of sending the message, indicating success or failure.
  */
-fun handleInvalidInput(bot: StickfixBot, context: ReadUser, message: String): BotResult<*> {
-    logger.warn("Invalid input from user ${context.username.ifBlank { context.userId.toString() }}")
-    return bot.sendMessage(context, message).fold(
+fun handleInvalidInput(bot: StickfixBot, user: StickfixUser, message: String): BotResult<*> {
+    logger.warn("Invalid input from user ${user.debugInfo}")
+    return bot.sendMessage(user, message).fold(
         { BotSuccess("Invalid input message sent", it) },
         { BotFailure("Failed to send invalid input message", it) }
     )
@@ -113,10 +110,10 @@ fun handleInvalidInput(bot: StickfixBot, context: ReadUser, message: String): Bo
  *
  * @param result The result of the previous operation, typically a success.
  * @param expectedState The expected state name that should be matched.
- * @param user The `ReadUser` instance representing the user whose state is being verified.
+ * @param user The `StickfixUser` instance representing the user whose state is being verified.
  * @return BotResult<*> The result of the verification, indicating success or failure.
  */
-fun verifyUserState(result: BotResult<*>, expectedState: String, user: ReadUser): BotResult<*> {
+fun verifyUserState(result: BotResult<*>, expectedState: String, user: StickfixUser): BotResult<*> {
     if (result is BotSuccess) {
         val isCorrectState = Users.selectAll().where { Users.id eq user.userId }
             .single()[Users.state] == expectedState
@@ -129,10 +126,10 @@ fun verifyUserState(result: BotResult<*>, expectedState: String, user: ReadUser)
  * Verifies that the user has been deleted from the database.
  *
  * @param result The result of the previous operation, typically a success.
- * @param user The `ReadUser` instance representing the user whose deletion is being verified.
+ * @param user The `StickfixUser` instance representing the user whose deletion is being verified.
  * @return BotResult<*> The result of the verification, indicating success or failure.
  */
-fun verifyUserDeletion(result: BotResult<*>, user: ReadUser): BotResult<*> {
+fun verifyUserDeletion(result: BotResult<*>, user: StickfixUser): BotResult<*> {
     if (result is BotSuccess) {
         val exists = Users.selectAll().where { Users.id eq user.userId }.count() > 0
         if (exists) return BotFailure("User was not deleted", false)

@@ -3,7 +3,6 @@ package cl.ravenhill.stickfix.states
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
@@ -16,15 +15,15 @@ import org.slf4j.LoggerFactory
  * appropriate transitions based on the user's input. The `RevokeState` class implements the `State` interface,
  * facilitating state-specific actions and transitions.
  *
- * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ * @property user A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class RevokeState(override val context: ReadWriteUser) : State {
+data class RevokeState(override val user: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     // Initialize the state by setting the user's current state to this state
     init {
-        context.state = this
+        user.state = this
     }
 
     /**
@@ -43,7 +42,7 @@ data class RevokeState(override val context: ReadWriteUser) : State {
             "NO" -> handleRejection(bot)
             else -> handleInvalidInput(
                 bot,
-                context,
+                user,
                 "Invalid input. Please type 'yes' or 'no' to confirm or deny revocation."
             )
         }
@@ -56,9 +55,9 @@ data class RevokeState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of confirming the revocation, indicating success or failure.
      */
     private fun handleConfirmation(bot: StickfixBot): BotResult<*> = transaction {
-        Users.deleteWhere { id eq context.userId }
-        logger.info("User ${context.username} has been revoked.")
-        bot.sendMessage(context, "Your registration has been revoked.")
+        Users.deleteWhere { id eq user.userId }
+        logger.info("User ${user.username} has been revoked.")
+        bot.sendMessage(user, "Your registration has been revoked.")
         BotSuccess("Your registration has been revoked.", true)
     }
 
@@ -69,8 +68,8 @@ data class RevokeState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of rejecting the revocation, indicating success or failure.
      */
     private fun handleRejection(bot: StickfixBot): BotResult<*> {
-        logger.info("User ${context.username} has chosen not to revoke.")
-        bot.sendMessage(context, "Your registration has not been revoked.")
+        logger.info("User ${user.username} has chosen not to revoke.")
+        bot.sendMessage(user, "Your registration has not been revoked.")
         return BotSuccess("Your registration has not been revoked.", true)
     }
 }

@@ -3,7 +3,6 @@ package cl.ravenhill.stickfix.commands
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup

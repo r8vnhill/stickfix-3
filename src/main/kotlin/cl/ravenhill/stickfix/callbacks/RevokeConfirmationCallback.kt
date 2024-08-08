@@ -3,7 +3,6 @@ package cl.ravenhill.stickfix.callbacks
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info

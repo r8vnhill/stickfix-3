@@ -4,7 +4,6 @@ import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.PrivateModeDisabledCallback.name
 import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback.name
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseOperationSuccess
 
 /**

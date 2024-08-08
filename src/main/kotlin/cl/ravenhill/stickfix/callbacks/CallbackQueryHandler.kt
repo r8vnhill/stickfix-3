@@ -6,7 +6,6 @@
 package cl.ravenhill.stickfix.callbacks
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

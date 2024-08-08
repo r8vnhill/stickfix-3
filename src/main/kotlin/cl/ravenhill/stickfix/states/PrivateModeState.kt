@@ -2,7 +2,6 @@ package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
@@ -12,14 +11,14 @@ import org.slf4j.LoggerFactory
  * allows the user to change their privacy settings and handles the appropriate transitions based on the user's input.
  * The `PrivateModeState` class implements the `State` interface, facilitating state-specific actions and transitions.
  *
- * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ * @property user A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-class PrivateModeState(override val context: ReadWriteUser) : State {
+class PrivateModeState(override val user: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     init {
-        context.state = this
+        user.state = this
     }
 
     /**
@@ -37,7 +36,7 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
             "DISABLE" -> handleDisable(bot)
             else -> handleInvalidInput(
                 bot,
-                context,
+                user,
                 "Invalid input. Please type 'enable' or 'disable' to change the private mode."
             )
         }
@@ -50,11 +49,11 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of enabling private mode, indicating success or failure.
      */
     private fun handleEnable(bot: StickfixBot): BotResult<*> =
-        handleCommonConfirmation(bot, "Private mode has been enabled.", context) {
+        handleCommonConfirmation(bot, "Private mode has been enabled.", user) {
             Users.update {
                 it[privateMode] = true
             }
-            logger.info("User ${context.username.ifBlank { context.userId.toString() }} enabled private mode")
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} enabled private mode")
         }
 
     /**
@@ -64,10 +63,10 @@ class PrivateModeState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of disabling private mode, indicating success or failure.
      */
     private fun handleDisable(bot: StickfixBot): BotResult<*> =
-        handleCommonRejection(bot, "Private mode has been disabled.", context) {
+        handleCommonRejection(bot, "Private mode has been disabled.", user) {
             Users.update {
                 it[privateMode] = false
             }
-            logger.info("User ${context.username.ifBlank { context.userId.toString() }} disabled private mode")
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} disabled private mode")
         }
 }

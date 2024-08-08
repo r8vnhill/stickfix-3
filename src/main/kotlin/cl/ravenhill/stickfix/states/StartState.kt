@@ -2,7 +2,6 @@ package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.ReadWriteUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
@@ -15,14 +14,14 @@ import org.slf4j.LoggerFactory
  * based on the user's input. The `StartState` class implements the `State` interface, facilitating state-specific
  * actions and transitions.
  *
- * @property context A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ * @property user A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class StartState(override val context: ReadWriteUser) : State {
+data class StartState(override val user: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     init {
-        context.state = this
+        user.state = this
     }
 
     /**
@@ -41,7 +40,7 @@ data class StartState(override val context: ReadWriteUser) : State {
             "NO" -> handleRejection(bot)
             else -> handleInvalidInput(
                 bot,
-                context,
+                user,
                 "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
             )
         }
@@ -54,8 +53,8 @@ data class StartState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of confirming the registration, indicating success or failure.
      */
     private fun handleConfirmation(bot: StickfixBot): BotResult<*> =
-        handleCommonConfirmation(bot, "You were successfully registered!", context) {
-            logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
+        handleCommonConfirmation(bot, "You were successfully registered!", user) {
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} confirmed start")
         }
 
     /**
@@ -66,9 +65,9 @@ data class StartState(override val context: ReadWriteUser) : State {
      * @return BotResult<*> The result of rejecting the registration, indicating success or failure.
      */
     private fun handleRejection(bot: StickfixBot): BotResult<*> =
-        handleCommonRejection(bot, "Registration cancelled.", context) {
-            logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
-            Users.deleteWhere { id eq context.userId }
+        handleCommonRejection(bot, "Registration cancelled.", user) {
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} denied start")
+            Users.deleteWhere { id eq user.userId }
         }
 
     /**

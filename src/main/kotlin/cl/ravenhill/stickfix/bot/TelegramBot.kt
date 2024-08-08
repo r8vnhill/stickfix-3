@@ -7,7 +7,6 @@ package cl.ravenhill.stickfix.bot
 
 import arrow.core.Either
 import cl.ravenhill.stickfix.exceptions.MessageSendingException
-import cl.ravenhill.stickfix.chat.ReadUser
 import cl.ravenhill.stickfix.db.DatabaseService
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 
