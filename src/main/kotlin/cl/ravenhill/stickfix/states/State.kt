@@ -87,6 +87,19 @@ sealed interface State {
         error(logger) { "User ${user.debugInfo} attempted to revoke from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
+
+    /**
+     * Handles the rejection of an action within a specific state. This function logs an error message indicating that
+     * the user attempted to reject an action from the current state and returns a `TransitionFailure` to indicate that
+     * the rejection was not successful.
+     *
+     * @param bot The `StickfixBot` instance used to interact with the bot's functionalities.
+     * @return `TransitionResult` indicating the failure to transition from the current state.
+     */
+    fun onRejection(bot: StickfixBot): TransitionResult {
+        error(logger) { "User ${user.debugInfo} attempted to reject from state ${javaClass.simpleName}" }
+        return TransitionFailure(this)
+    }
 }
 
 /**

@@ -84,10 +84,7 @@ data class StickfixUser(
      * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the transition to the idle state, indicating success or failure.
      */
-    fun onIdle(bot: StickfixBot): TransitionResult {
-        bot.databaseService.setUserState<IdleState>(userId)
-        return state.onIdle(bot)
-    }
+    fun onIdle(bot: StickfixBot) = state.onIdle(bot)
 
     /**
      * Handles the revocation process for the user, updating the user's state in the database.
@@ -95,8 +92,7 @@ data class StickfixUser(
      * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the revocation process, indicating success or failure.
      */
-    fun onRevoke(bot: StickfixBot): TransitionResult {
-        bot.databaseService.setUserState<RevokeState>(userId)
-        return state.onRevoke(bot)
-    }
+    fun onRevoke(bot: StickfixBot) = state.onRevoke(bot)
+
+    fun onRejection(bot: StickfixBot): TransitionResult = state.onRejection(bot)
 }

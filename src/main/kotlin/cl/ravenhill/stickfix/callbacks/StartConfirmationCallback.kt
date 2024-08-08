@@ -9,6 +9,7 @@ import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.error
 import cl.ravenhill.stickfix.info
 
@@ -36,7 +37,7 @@ private const val ALREADY_REGISTERED_MESSAGE = "You are already registered!"
  *  A formatted string suitable for logging, which includes the user's identifier and the error
  *  message.
  */
-private fun errorSendingMessageLog(user: ReadUser, result: BotResult<*>) =
+private fun errorSendingMessageLog(user: StickfixUser, result: BotResult<*>) =
     "Failed to send message to ${user.debugInfo}: ${result.message}"
 
 /**
@@ -45,7 +46,7 @@ private fun errorSendingMessageLog(user: ReadUser, result: BotResult<*>) =
  * @param user
  *  The user to be registered in the system. User details are utilized for logging purposes.
  */
-private fun registeringUserLog(user: ReadUser) = "Registering new user: ${user.debugInfo}"
+private fun registeringUserLog(user: StickfixUser) = "Registering new user: ${user.debugInfo}"
 
 /**
  * Represents a handler for processing start confirmation callback queries in the Stickfix bot application. This sealed
@@ -64,12 +65,12 @@ sealed class StartConfirmationCallback : CallbackQueryHandler() {
      * reported.
      *
      * @param bot The `StickfixBot` instance used to send messages to the user.
-     * @param user The `ReadUser` instance representing the recipient of the message.
+     * @param user The `StickfixUser` instance representing the recipient of the message.
      * @param message The text of the message to send to the user.
      * @return CallbackResult The result of the message sending operation, indicating success or failure along with any
      *   relevant messages.
      */
-    protected fun sendMessage(bot: StickfixBot, user: ReadUser, message: String) =
+    protected fun sendMessage(bot: StickfixBot, user: StickfixUser, message: String) =
         bot.sendMessage(user, message).fold(
             ifLeft = { error ->
                 logger.error(errorSendingMessageLog(user, error))
@@ -94,13 +95,13 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      * status and responds appropriately by either registering the user or notifying them that they are already
      * registered.
      *
-     * @param user A `ReadUser` instance representing the user interacting with the bot.
+     * @param user A `StickfixUser` instance representing the user interacting with the bot.
      * @param bot A `StickfixBot` instance used to send messages back to the user.
      * @return CallbackResult The result of the operation, indicating whether the process was successful or if the user
      *   was already registered, with appropriate messages delivered via the bot.
      */
     override fun invoke(
-        user: ReadUser,
+        user: StickfixUser,
         bot: StickfixBot,
     ): CallbackResult {
         val databaseService = bot.databaseService
@@ -134,12 +135,12 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      * Handles the logic when a user declines the intention to start or register. It sends a message confirming the
      * user's choice and logs the action.
      *
-     * @param user A `ReadUser` instance representing the user interacting with the bot.
+     * @param user A `StickfixUser` instance representing the user interacting with the bot.
      * @param bot A `StickfixBot` instance used to send messages back to the user.
      * @return CallbackResult The result of the operation, indicating the user's choice not to register, with
      *   appropriate messages delivered via the bot.
      */
-    override fun invoke(user: ReadUser, bot: StickfixBot): CallbackResult {
+    override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
         user.onRejection(bot)
         val logMessage = "User ${user.debugInfo} chose not to register."
         info(logger) { logMessage }
