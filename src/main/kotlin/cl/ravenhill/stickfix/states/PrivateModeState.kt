@@ -2,6 +2,7 @@ package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
@@ -11,10 +12,10 @@ import org.slf4j.LoggerFactory
  * allows the user to change their privacy settings and handles the appropriate transitions based on the user's input.
  * The `PrivateModeState` class implements the `State` interface, facilitating state-specific actions and transitions.
  *
- * @property user A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-class PrivateModeState(override val user: ReadWriteUser) : State {
+class PrivateModeState(override val user: StickfixUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     init {

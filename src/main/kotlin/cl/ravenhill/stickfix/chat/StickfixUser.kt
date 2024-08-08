@@ -5,17 +5,10 @@
 
 package cl.ravenhill.stickfix.chat
 
-import cl.ravenhill.jakt.Jakt.constraints
-import cl.ravenhill.jakt.constraints.BeNull
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.states.IdleState
-import cl.ravenhill.stickfix.states.RevokeState
-import cl.ravenhill.stickfix.states.StartState
 import cl.ravenhill.stickfix.states.State
 import cl.ravenhill.stickfix.states.TransitionResult
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.transactions.transaction
 import com.github.kotlintelegrambot.entities.User as TelegramUser
 
 /**
@@ -45,29 +38,14 @@ data class StickfixUser(
     val debugInfo: String get() = username.ifBlank { userId.toString() }
 
     companion object {
+        /**
+         * Creates a `StickfixUser` instance from a given `TelegramUser`. This function extracts the necessary
+         * information from the `TelegramUser` and uses it to create a new `StickfixUser`.
+         *
+         * @param from The `TelegramUser` instance from which to create the `StickfixUser`.
+         * @return A new `StickfixUser` instance with the username and ID extracted from the `TelegramUser`.
+         */
         fun from(from: TelegramUser) = StickfixUser(from.username ?: "unknown", from.id)
-
-        fun from(row: ResultRow) = transaction {
-            constraints {
-                "User must have an ID" {
-                    row.getOrNull(Users.id) mustNot BeNull
-                }
-                "User must have a username" {
-                    row.getOrNull(Users.username) mustNot BeNull
-                }
-                "User must have a state" {
-                    row.getOrNull(Users.state) mustNot BeNull
-                }
-            }
-            val user = StickfixUser(row[Users.username], row[Users.chatId])
-            user.state = when (row[Users.state]) {
-                IdleState::class.simpleName -> IdleState(user)
-                StartState::class.simpleName -> StartState(user)
-                RevokeState::class.simpleName -> RevokeState(user)
-                else -> throw IllegalArgumentException("Unknown state")
-            }
-            user
-        }
     }
 
     /**
@@ -94,5 +72,13 @@ data class StickfixUser(
      */
     fun onRevoke(bot: StickfixBot) = state.onRevoke(bot)
 
+    /**
+     * Handles the rejection of an action within the current state by delegating the call to the state's `onRejection`
+     * method. This function ensures that the rejection logic defined in the current state is executed.
+     *
+     * @param bot The `StickfixBot` instance used to interact with the bot's functionalities.
+     * @return `TransitionResult` indicating the result of the rejection handling, as determined by the current state's
+     *   `onRejection` method.
+     */
     fun onRejection(bot: StickfixBot): TransitionResult = state.onRejection(bot)
 }

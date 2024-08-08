@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.commands
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup

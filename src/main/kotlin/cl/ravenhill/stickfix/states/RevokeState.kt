@@ -3,6 +3,7 @@ package cl.ravenhill.stickfix.states
 import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.BotSuccess
 import cl.ravenhill.stickfix.bot.StickfixBot
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
@@ -15,10 +16,10 @@ import org.slf4j.LoggerFactory
  * appropriate transitions based on the user's input. The `RevokeState` class implements the `State` interface,
  * facilitating state-specific actions and transitions.
  *
- * @property user A `ReadWriteUser` instance representing the user information relevant to the state. This allows the
+ * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class RevokeState(override val user: ReadWriteUser) : State {
+data class RevokeState(override val user: StickfixUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     // Initialize the state by setting the user's current state to this state

@@ -6,7 +6,7 @@
 package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.db.DatabaseService
+import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
