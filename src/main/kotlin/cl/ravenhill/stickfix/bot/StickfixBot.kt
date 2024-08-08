@@ -82,21 +82,18 @@ class StickfixBot(val databaseService: StickfixDatabase) {
     ): Either<BotFailure<MessageSendingException>, BotSuccess<String>> =
         _bot.sendMessage(ChatId.fromId(user.userId), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
             ifSuccess = {
-                BotSuccess(
-                    "Message sent to user ${user.username.ifBlank { user.userId.toString() }}",
-                    message
-                ).right()
+                BotSuccess(message = "Message sent to user ${user.debugInfo}", data = message).right()
             },
             ifError = {
                 BotFailure(
-                    "Failed to send message to user ${user.username.ifBlank { user.userId.toString() }}",
-                    MessageSendingException.from(it)
+                    message = "Failed to send message to user ${user.debugInfo}",
+                    data = MessageSendingException.from(it)
                 ).left()
             }
         )
 }
 
-context(Bot.Builder)
+context(StickfixBot, Bot.Builder)
 private fun registerCommands(bot: StickfixBot) {
     dispatch {
         // region : Command registration
@@ -104,10 +101,10 @@ private fun registerCommands(bot: StickfixBot) {
         registerRevokeCommand(bot)
         // endregion
         // region : Callback query registration
-        registerStartConfirmationYes(bot)
-        registerStartConfirmationNo(bot)
-        registerRevokeConfirmationYes(bot)
-        registerRevokeConfirmationNo(bot)
+        registerStartConfirmationYes()
+        registerStartConfirmationNo()
+        registerRevokeConfirmationYes()
+        registerRevokeConfirmationNo()
         registerPrivateModeEnabledCallback(bot)
         registerPrivateModeDisabledCallback(bot)
         // endregion

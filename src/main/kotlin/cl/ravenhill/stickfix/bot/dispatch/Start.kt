@@ -17,32 +17,28 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("bot.dispatch.Start")
 
 /**
- * Registers the start confirmation callback for "Yes" responses within the given dispatcher context.
- * This function handles the confirmation process by invoking the `StartConfirmationYes` callback
- * and creating a `StickfixUser` from the callback query data.
- *
- * @param bot The `StickfixBot` instance used to send messages to the user and access the database service.
+ * Registers the start confirmation callback for "Yes" responses within the given dispatcher context. This function
+ * handles the confirmation process by invoking the `StartConfirmationYes` callback and creating a `StickfixUser` from
+ * the callback query data.
  */
-context(Dispatcher)
-internal fun registerStartConfirmationYes(bot: StickfixBot) {
+context(StickfixBot, Dispatcher)
+internal fun registerStartConfirmationYes() {
     callbackQuery(StartConfirmationYes.name) {
         val user = StickfixUser.from(callbackQuery.from)
-        StartConfirmationYes(user, bot)
+        StartConfirmationYes(user)
     }
 }
 
 /**
- * Registers the start confirmation callback for "No" responses within the given dispatcher context.
- * This function handles the rejection process by invoking the `StartConfirmationNo` callback
- * and creating a `StickfixUser` from the callback query data.
- *
- * @param bot The `StickfixBot` instance used to send messages to the user and access the database service.
+ * Registers the start confirmation callback for "No" responses within the given dispatcher context. This function
+ * handles the rejection process by invoking the `StartConfirmationNo` callback and creating a `StickfixUser` from the
+ * callback query data.
  */
-context(Dispatcher)
-internal fun registerStartConfirmationNo(bot: StickfixBot) {
+context(StickfixBot, Dispatcher)
+internal fun registerStartConfirmationNo() {
     callbackQuery(StartConfirmationNo.name) {
         val user = StickfixUser.from(callbackQuery.from)
-        StartConfirmationNo(user, bot)
+        StartConfirmationNo(user)
     }
 }
 

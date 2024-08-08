@@ -29,11 +29,11 @@ data object PrivateModeEnabledCallback : PrivateModeCallback() {
      * confirmation message.
      *
      * @param user The `StickfixUser` instance representing the user who enabled private mode.
-     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of enabling private mode, indicating success or failure.
      */
-    override fun invoke(user: StickfixUser, bot: StickfixBot) =
-        bot.databaseService.setPrivateMode(user, PrivateMode.ENABLED).fold(
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult =
+        databaseService.setPrivateMode(user, PrivateMode.ENABLED).fold(
             ifLeft = { CallbackFailure("Failed to enable private mode.") },
             ifRight = { CallbackSuccess("Private mode enabled.") },
         )
@@ -54,12 +54,12 @@ data object PrivateModeDisabledCallback : PrivateModeCallback() {
      * confirmation message.
      *
      * @param user The `StickfixUser` instance representing the user who disabled private mode.
-     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of disabling private mode, indicating success or failure.
      */
-    override fun invoke(user: StickfixUser, bot: StickfixBot) =
-        when (bot.databaseService.setPrivateMode(user, PrivateMode.DISABLED)) {
-            is DatabaseOperationSuccess<*> -> CallbackSuccess("Private mode disabled.")
-            else -> CallbackFailure("Failed to disable private mode.")
-        }
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult =
+        databaseService.setPrivateMode(user, PrivateMode.DISABLED).fold(
+            ifLeft = { CallbackFailure("Failed to disable private mode for user ${user.debugInfo}.") },
+            ifRight = { CallbackSuccess("Private mode disabled for user ${user.debugInfo}.") },
+        )
 }

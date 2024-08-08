@@ -43,12 +43,11 @@ sealed interface State {
      * a `TransitionFailure` with the current state as the next state, suggesting no transition
      * occurs.
      *
-     * @param bot A `StickfixBot` instance, allowing the state to interact with the Telegram bot, such as
-     *            sending messages or commands.
      * @return TransitionResult Indicates the failure to transition from this state, typically because the action
      *                          is not allowed or valid in the current context.
      */
-    fun onStart(bot: StickfixBot): TransitionResult {
+    context(StickfixBot)
+    fun onStart(): TransitionResult {
         logError(logger) { "User ${user.debugInfo} attempted to start from state ${javaClass.simpleName}" }
         return TransitionFailure(this)
     }
@@ -100,7 +99,22 @@ sealed interface State {
      */
     context(StickfixBot)
     fun onStartRejection(): TransitionResult {
-        logError(logger) { "User ${user.debugInfo} attempted to reject from state ${javaClass.simpleName}" }
+        logError(logger) { "User ${user.debugInfo} attempted to reject start from state ${javaClass.simpleName}" }
+        return TransitionFailure(this@State)
+    }
+
+    /**
+     * Handles the confirmation of the start action for the current state of the user. This function logs an error
+     * message indicating that the user attempted to confirm the start action from an invalid state and returns a
+     * `TransitionFailure`.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return TransitionResult The result of the start confirmation transition, indicating failure due to an invalid
+     *   state.
+     */
+    context(StickfixBot)
+    fun onStartConfirmation(): TransitionResult {
+        logError(logger) { "User ${user.debugInfo} attempted to confirm start from state ${javaClass.simpleName}" }
         return TransitionFailure(this@State)
     }
 }

@@ -29,23 +29,28 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
      * Handles the revocation confirmation by deleting the user from the database and sending a confirmation message.
      *
      * @param user The `StickfixUser` instance representing the user who confirmed the revocation.
-     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of the revocation confirmation, indicating success or failure.
      */
-    override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
-        bot.databaseService.deleteUser(user)
-        logInfo(logger) { "User ${user.username} has been revoked." }
-        return bot.sendMessage(user, "Your registration has been revoked.").fold(
-            ifLeft = {
-                logInfo(logger) { "User ${user.username} has been revoked." }
-                CallbackSuccess("Your registration has been revoked.")
-            },
-            ifRight = {
-                logError(logger) { "Failed to send revocation message to user ${user.username}" }
-                CallbackFailure(it.message)
-            }
-        )
-    }
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult = databaseService.deleteUser(user).fold(
+        ifLeft = {
+            logError(logger) { "Failed to revoke user ${user.debugInfo}" }
+            CallbackFailure(it.message)
+        },
+        ifRight = {
+            logInfo(logger) { "User ${user.username} has been revoked." }
+            sendMessage(user, "Your registration has been revoked.").fold(
+                ifLeft = {
+                    logInfo(logger) { "User ${user.username} has been revoked." }
+                    CallbackSuccess("Your registration has been revoked.")
+                },
+                ifRight = {
+                    logError(logger) { "Failed to send revocation message to user ${user.username}" }
+                    CallbackFailure(it.message)
+                }
+            )
+        }
+    )
 }
 
 /**
@@ -62,12 +67,12 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
      * Handles the revocation rejection by retaining the user's registration and sending a confirmation message.
      *
      * @param user The `StickfixUser` instance representing the user who rejected the revocation.
-     * @param bot The `StickfixBot` instance used to send messages to the user.
      * @return CallbackResult The result of the revocation rejection, indicating success or failure.
      */
-    override fun invoke(user: StickfixUser, bot: StickfixBot) = transaction {
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult {
         logInfo(logger) { "User ${user.username} has chosen not to revoke." }
-        bot.sendMessage(user, "Your registration has not been revoked.").fold(
+        return sendMessage(user, "Your registration has not been revoked.").fold(
             ifLeft = {
                 logInfo(logger) { "User ${user.username} has chosen not to revoke." }
                 CallbackSuccess("Your registration has not been revoked.")

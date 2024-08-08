@@ -11,21 +11,9 @@ import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logDebug
-import cl.ravenhill.stickfix.logError
-import cl.ravenhill.stickfix.logInfo
+import cl.ravenhill.stickfix.states.TransitionResult
 import cl.ravenhill.stickfix.states.TransitionSuccess
-
-/**
- * A constant representing the welcome message sent to users when they successfully register  with
- * Stickfix via the Telegram bot. This message is intended to greet users and confirm their
- * successful registration or initiation.
- */
-private const val WELCOME_MESSAGE = "Welcome to Stickfix!"
-
-/**
- * A constant string message representing the response when a user is already registered.
- */
-private const val ALREADY_REGISTERED_MESSAGE = "You are already registered!"
+import org.slf4j.Logger
 
 /**
  * Generates a standardized error log message when there is a failure in sending messages to users.
@@ -41,14 +29,6 @@ private const val ALREADY_REGISTERED_MESSAGE = "You are already registered!"
  */
 private fun errorSendingMessageLog(user: StickfixUser, result: BotResult<*>) =
     "Failed to send message to ${user.debugInfo}: ${result.message}"
-
-/**
- * Generates a standardized log message for registering new users in the system.
- *
- * @param user
- *  The user to be registered in the system. User details are utilized for logging purposes.
- */
-private fun registeringUserLog(user: StickfixUser) = "Registering new user: ${user.debugInfo}"
 
 /**
  * Represents a handler for processing start confirmation callback queries in the Stickfix bot application. This sealed
@@ -98,29 +78,17 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      * registered.
      *
      * @param user A `StickfixUser` instance representing the user interacting with the bot.
-     * @param bot A `StickfixBot` instance used to send messages back to the user.
+     * @receiver bot A `StickfixBot` instance used to send messages back to the user.
      * @return CallbackResult The result of the operation, indicating whether the process was successful or if the user
      *   was already registered, with appropriate messages delivered via the bot.
      */
-    override fun invoke(
-        user: StickfixUser,
-        bot: StickfixBot,
-    ): CallbackResult {
-        val databaseService = bot.databaseService
-        return databaseService.getUser(user).fold(
-            ifLeft = { error ->
-                logError(logger) { "Failed to retrieve user data for ${user.debugInfo}: ${error.message}" }
-                logInfo(logger) { registeringUserLog(user) }
-                databaseService.addUser(user)
-                val message = WELCOME_MESSAGE
-                sendMessage(bot, user, message)
-            },
-            ifRight = { userResult ->
-                logInfo(logger) { "Retrieved user data for ${user.debugInfo}: ${userResult.data}" }
-                sendMessage(bot, user, ALREADY_REGISTERED_MESSAGE)
-            }
-        )
-    }
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult = handleTransition(
+        user,
+        logger,
+        "User ${user.debugInfo} registered successfully.",
+        "Failed to transition user ${user.debugInfo} to",
+    ) { onStartConfirmation() }
 }
 
 /**
@@ -138,21 +106,47 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      * user's choice and logs the action.
      *
      * @param user A `StickfixUser` instance representing the user interacting with the bot.
-     * @param bot A `StickfixBot` instance used to send messages back to the user.
+     * @receiver bot A `StickfixBot` instance used to send messages back to the user.
      * @return CallbackResult The result of the operation, indicating the user's choice not to register, with
      *   appropriate messages delivered via the bot.
      */
-    override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
-        with(bot) {
-            val transitionResult = user.onStartRejection().nextState.onIdle()
-            logDebug(logger, transitionResult::toString)
-            return when (transitionResult) {
-                is TransitionSuccess -> CallbackSuccess(
-                    "User ${user.debugInfo} chose not to register. Transitioned to ${transitionResult.nextState}"
-                )
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CallbackResult =
+        handleTransition(
+            user,
+            logger,
+            "User ${user.debugInfo} chose not to register.",
+            "Failed to transition user ${user.debugInfo} to",
+        ) { onStartRejection() }
+}
 
-                else -> CallbackFailure("Failed to transition user ${user.debugInfo} to ${transitionResult.nextState}")
-            }
-        }
+/**
+ * Handles the transition logic for a user's state change, logging the result and returning the appropriate
+ * `CallbackResult`.
+ *
+ * @param user The user whose state is being transitioned.
+ * @param transitionFunction The function to invoke the specific transition (`onStartConfirmation` or
+ * `onStartRejection`).
+ * @param successMessage The message to log and return on successful transition.
+ * @param failureMessage The message to log and return on failed transition.
+ * @receiver The `StickfixBot` instance used to send messages and manage the database service.
+ * @return The result of the transition, wrapped in a `CallbackResult`.
+ */
+context(StickfixBot)
+private fun handleTransition(
+    user: StickfixUser,
+    logger: Logger,
+    successMessage: String,
+    failureMessage: String,
+    transitionFunction: StickfixUser.() -> TransitionResult,
+): CallbackResult {
+    val transitionResult = user.transitionFunction().nextState.onIdle()
+    logDebug(logger, transitionResult::toString)
+    return when (transitionResult) {
+        is TransitionSuccess -> CallbackSuccess(
+            "$successMessage Transitioned to ${transitionResult.nextState}"
+        )
+
+        else -> CallbackFailure("$failureMessage ${transitionResult.nextState}")
     }
 }

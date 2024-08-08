@@ -48,11 +48,34 @@ data class StartState(override val user: StickfixUser) : State {
         }
     }
 
+    /**
+     * Handles the rejection of the start action by the user. This function logs an informational message indicating
+     * that the user chose not to register, updates the user's state to `StartRejectionState`, and returns a
+     * `TransitionSuccess` result.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return TransitionResult The result of the start rejection transition, indicating success.
+     */
     context(StickfixBot)
     override fun onStartRejection(): TransitionResult {
         logInfo(logger) { "User ${user.debugInfo} chose not to register." }
-        user.state = StartRejectionState(user)
-        databaseService.setUserState<StartRejectionState>(user)
+        databaseService.setUserState(StartRejectionState(user))
+        return TransitionSuccess(user.state)
+    }
+
+    /**
+     * Handles the confirmation of the start action by the user. This function logs an informational message indicating
+     * that the user confirmed registration, updates the user's state to `StartConfirmationState`, and returns a
+     * `TransitionSuccess` result.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return TransitionResult The result of the start confirmation transition, indicating success.
+     */
+    context(StickfixBot)
+    override fun onStartConfirmation(): TransitionResult {
+        logInfo(logger) { "User ${user.debugInfo} confirmed registration." }
+        user.state = StartConfirmationState(user)
+        databaseService.setUserState(user.state)
         return TransitionSuccess(user.state)
     }
 

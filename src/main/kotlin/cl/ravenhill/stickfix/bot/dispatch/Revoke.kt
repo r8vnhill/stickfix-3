@@ -38,15 +38,13 @@ internal fun registerRevokeCommand(bot: StickfixBot) {
  * Registers the revoke confirmation callback for "Yes" responses within the given dispatcher context. This function
  * handles the confirmation process by invoking the `RevokeConfirmationYes` callback and logging the results of the
  * execution.
- *
- * @param bot The `StickfixBot` instance used to send messages to the user.
  */
-context(Dispatcher)
-internal fun registerRevokeConfirmationYes(bot: StickfixBot) {
+context(StickfixBot, Dispatcher)
+internal fun registerRevokeConfirmationYes() {
     callbackQuery(RevokeConfirmationYes.name) {
-        bot.databaseService.getUser(callbackQuery.from.id).fold(
+        databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { RevokeConfirmationYes(it.data, bot) }
+            ifRight = { RevokeConfirmationYes(it.data) }
         )
     }
 }
@@ -55,15 +53,13 @@ internal fun registerRevokeConfirmationYes(bot: StickfixBot) {
  * Registers the revoke confirmation callback for "No" responses within the given dispatcher context. This function
  * handles the rejection process by invoking the `RevokeConfirmationNo` callback and logging the results of the
  * execution.
- *
- * @param bot The `StickfixBot` instance used to send messages to the user.
  */
-context(Dispatcher)
-internal fun registerRevokeConfirmationNo(bot: StickfixBot) {
+context(StickfixBot, Dispatcher)
+internal fun registerRevokeConfirmationNo() {
     callbackQuery(RevokeConfirmationNo.name) {
-        bot.databaseService.getUser(callbackQuery.from.id).fold(
+        databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { RevokeConfirmationNo(it.data, bot) }
+            ifRight = { RevokeConfirmationNo(it.data) }
         )
     }
 }

@@ -96,7 +96,7 @@ data class StartCommand(
                     CommandFailure(user, "Failed to send registration prompt.")
                 },
                 ifRight = {
-                    user.onStart(bot)
+                    user.onStart()
                     CommandSuccess(user, "Registration prompt sent.")
                 }
             )

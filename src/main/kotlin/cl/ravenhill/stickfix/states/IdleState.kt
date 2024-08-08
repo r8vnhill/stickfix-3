@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.states
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logDebug
+import cl.ravenhill.stickfix.logError
 import org.slf4j.LoggerFactory
 
 /**
@@ -33,8 +34,12 @@ data class IdleState(override val user: StickfixUser) : State {
      * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the transition to `StartState`, indicating success.
      */
-    override fun onStart(bot: StickfixBot): TransitionResult {
-        user.state = StartState(user)
+    context(StickfixBot)
+    override fun onStart(): TransitionResult {
+        databaseService.setUserState(StartState(user)).fold(
+            ifLeft = { logError(logger) { "Failed to update user state: $it" } },
+            ifRight = { logDebug(logger) { "User state updated to $it" } }
+        )
         return TransitionSuccess(user.state)
     }
 

@@ -17,13 +17,13 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Private")
  *
  * @param bot The `StickfixBot` instance used to send messages to the user and access the database service.
  */
-context(Dispatcher)
+context(StickfixBot, Dispatcher)
 internal fun registerPrivateModeEnabledCallback(bot: StickfixBot) {
     callbackQuery(PrivateModeEnabledCallback.name) {
         logInfo(logger) { "Received private mode enabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeEnabledCallback(it.data, bot) }
+            ifRight = { PrivateModeEnabledCallback(it.data) }
         )
     }
 }
@@ -34,13 +34,13 @@ internal fun registerPrivateModeEnabledCallback(bot: StickfixBot) {
  *
  * @param bot The `StickfixBot` instance used to send messages to the user and access the database service.
  */
-context(Dispatcher)
+context(StickfixBot, Dispatcher)
 internal fun registerPrivateModeDisabledCallback(bot: StickfixBot) {
     callbackQuery(PrivateModeDisabledCallback.name) {
         logInfo(logger) { "Received private mode disabled callback" }
         bot.databaseService.getUser(callbackQuery.from.id).fold(
             ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeDisabledCallback(it.data, bot) }
+            ifRight = { PrivateModeDisabledCallback(it.data) }
         )
     }
 }

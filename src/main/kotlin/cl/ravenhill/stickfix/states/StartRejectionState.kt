@@ -27,7 +27,7 @@ class StartRejectionState(override val user: StickfixUser) : State {
         ifLeft = { TransitionFailure(this) },
         ifRight = {
             databaseService.setUserState(IdleState(user))
-            TransitionSuccess(IdleState(user))
+            TransitionSuccess(user.state)
         }
     )
 }

@@ -149,21 +149,6 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
 
 
     /**
-     * Sets the state of a user in the database to the specified state type. This function updates the user's state to
-     * the simple name of the specified class type `T`.
-     *
-     * @param T The type of the state to set for the user. This must be a class type.
-     * @param user The `StickfixUser` instance representing the user.
-     */
-    inline fun <reified T> setUserState(user: StickfixUser) = executeDatabaseOperationSafely(database) {
-        val logger = LoggerFactory.getLogger(javaClass.simpleName)
-        logInfo(logger) { "Setting user ${user.userId} state to ${T::class.simpleName}" }
-        Users.update({ Users.id eq user.userId }) {
-            it[state] = T::class.simpleName!!
-        }
-    }
-
-    /**
      * Sets the state of a user in the database. This function updates the user's state both in-memory and in the
      * database, ensuring that the user's state is consistently managed.
      *

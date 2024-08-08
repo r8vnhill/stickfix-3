@@ -31,9 +31,10 @@ sealed class CallbackQueryHandler {
      * subclasses to handle the callback query according to the handler's purpose.
      *
      * @param user The `StickfixUser` instance representing the user who initiated the callback query.
-     * @param bot The `StickfixBot` instance used to process the callback query and interact with the Telegram API.
+     * @receiver bot The `StickfixBot` instance used to process the callback query and interact with the Telegram API.
      * @return `CallbackResult` indicating the result of processing the callback query, which can be a success or
      *   failure.
      */
-    abstract operator fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult
+    context(StickfixBot)
+    abstract operator fun invoke(user: StickfixUser): CallbackResult
 }

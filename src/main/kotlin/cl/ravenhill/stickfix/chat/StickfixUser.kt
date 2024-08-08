@@ -43,7 +43,8 @@ data class StickfixUser(
      * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the transition attempt, indicating success or failure.
      */
-    fun onStart(bot: StickfixBot): TransitionResult = state.onStart(bot)
+    context(StickfixBot)
+    fun onStart(): TransitionResult = state.onStart()
 
     /**
      * Transitions the user to the idle state by delegating the call to the current state's `onIdle` method. This
@@ -76,6 +77,17 @@ data class StickfixUser(
      */
     context(StickfixBot)
     fun onStartRejection(): TransitionResult = state.onStartRejection()
+
+    /**
+     * Handles the confirmation of the start action for the current state of the user. This function delegates the
+     * handling of the start confirmation to the current state of the user.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return TransitionResult The result of the start confirmation transition, indicating success or failure.
+     */
+    context(StickfixBot)
+    fun onStartConfirmation(): TransitionResult = state.onStartConfirmation()
+
 
     companion object {
         /**
