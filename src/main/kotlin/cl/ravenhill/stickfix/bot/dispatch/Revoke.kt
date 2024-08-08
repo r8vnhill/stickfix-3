@@ -27,7 +27,7 @@ context(Dispatcher)
 internal fun registerRevokeCommand(bot: StickfixBot) {
     command(RevokeCommand.NAME) {
         logInfo(logger) { "Received revoke command" }
-        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot).execute()) {
+        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot).invoke()) {
             is CommandSuccess -> logInfo(logger) { "Revoke command executed successfully: $result" }
             is CommandFailure -> logError(logger) { "Revoke command failed: $result" }
         }

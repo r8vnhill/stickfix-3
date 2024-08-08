@@ -11,26 +11,25 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.slf4j.LoggerFactory
 
 /**
- * Represents the command to revoke the Stickfix bot for a user. This command handles checking if the user exists in the
- * database and, if so, sends a confirmation prompt to revoke their registration. It implements the `Command` interface,
- * utilizing the provided bot instance, user information, and database service.
+ * Represents a command to revoke a user's registration in the Stickfix bot. This command handles the logic for
+ * confirming the user's intention to revoke their registration and updating the user's state accordingly.
  *
- * @property user The `StickfixUser` instance representing the user issuing the command. This provides read-only access to
- *   basic user information like username and user ID.
- * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows the command to
- *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
+ * @property user The `StickfixUser` instance representing the user who initiated the revoke command.
+ * @property bot The `StickfixBot` instance used to process the command and interact with the Telegram API.
  */
-data class RevokeCommand(override val user: StickfixUser, override val bot: StickfixBot) : Command {
+data class RevokeCommand(
+    override val user: StickfixUser,
+    override val bot: StickfixBot
+) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Executes the revoke command, checking if the user exists in the database and sending a confirmation prompt if
-     * they do. Logs the result of the command execution.
+     * Executes the revoke command. This method retrieves the user's information from the database, sends a confirmation
+     * message to the user, and updates the user's state based on their response.
      *
-     * @return CommandResult The result of the command execution, indicating success or failure along with any relevant
-     *   messages.
+     * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
      */
-    override fun execute(): CommandResult {
+    override fun invoke(): CommandResult {
         logInfo(logger) { "User ${user.username.ifBlank { user.userId.toString() }} revoked the bot" }
         val result = bot.databaseService.getUser(user).fold(
             ifLeft = {
@@ -49,9 +48,10 @@ data class RevokeCommand(override val user: StickfixUser, override val bot: Stic
     }
 
     /**
-     * Creates an inline keyboard markup with "Yes" and "No" buttons for the revoke confirmation prompt.
+     * Creates an inline keyboard markup with options for the user to confirm or cancel the revocation of their
+     * registration.
      *
-     * @return InlineKeyboardMarkup The inline keyboard markup.
+     * @return `InlineKeyboardMarkup` containing the "Yes" and "No" buttons for user input.
      */
     private fun inlineKeyboardMarkup() = InlineKeyboardMarkup.create(
         listOf(
@@ -64,7 +64,7 @@ data class RevokeCommand(override val user: StickfixUser, override val bot: Stic
 
     companion object {
         /**
-         * The name of the command, used to identify and register the command within the bot.
+         * The name of the command, used for identifying and registering the command in the bot.
          */
         const val NAME = "revoke"
     }

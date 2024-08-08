@@ -56,7 +56,7 @@ context(Dispatcher)
 internal fun registerStartCommand(bot: StickfixBot) {
     command(StartCommand.NAME) {
         logInfo(logger) { "Received start command from ${message.from}" }
-        when (val result = StartCommand(StickfixUser.from(message.from!!), bot).execute()) {
+        when (val result = StartCommand(StickfixUser.from(message.from!!), bot).invoke()) {
             is CommandSuccess -> logInfo(logger) { "Start command executed successfully: $result" }
             is CommandFailure -> logError(logger) { "Start command failed: $result" }
         }

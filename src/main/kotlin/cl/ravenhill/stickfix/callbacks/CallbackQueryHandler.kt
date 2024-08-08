@@ -12,34 +12,28 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Represents a handler for processing callback queries in the Stickfix bot application. This sealed class provides the
- * necessary structure and logging capabilities for handling various types of callback queries. Subclasses must define
- * the specific logic for handling callback queries by implementing the abstract properties
- * and methods.
+ * Represents a handler for callback queries in a Telegram bot. This sealed class provides a structure for defining
+ * specific callback query handlers, each responsible for processing a particular type of callback query. It enforces a
+ * consistent interface for all handlers, including a method to invoke the handler and process the query.
  *
- * @property logger A logger instance for logging actions related to callback query handling. This logger is used to
- *   record activities such as processing queries and handling errors.
+ * @property logger A logger instance for logging callback query handling actions. This logger is protected and
+ *   available to subclasses for logging purposes.
+ * @property name A string that uniquely identifies the callback query handler. This is used to associate the handler
+ *   with specific callback query commands.
  */
 sealed class CallbackQueryHandler {
     protected val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * The name of the callback query handler, used for identifying the specific type of callback query being handled.
-     * Subclasses must provide a unique name for each handler.
-     */
     abstract val name: String
 
     /**
-     * Handles the callback query, performing the necessary actions and returning the result of the operation.
-     * Subclasses must implement this operator function to define the specific logic for handling the callback query.
+     * Processes a callback query for a specific user and bot instance. This method must be implemented by all
+     * subclasses to handle the callback query according to the handler's purpose.
      *
-     * @param user The `StickfixUser` instance representing the user initiating the callback query. This provides read-only
-     *   access to basic user information like username and user ID.
-     * @param bot The `StickfixBot` instance representing the bot that processes the callback query. This allows the
-     *   handler to interact with the bot's functionalities, such as sending messages or performing actions on behalf of
-     *   the user.
-     * @return CallbackResult The result of handling the callback query, indicating success or failure along with any
-     *   relevant messages or data.
+     * @param user The `StickfixUser` instance representing the user who initiated the callback query.
+     * @param bot The `StickfixBot` instance used to process the callback query and interact with the Telegram API.
+     * @return `CallbackResult` indicating the result of processing the callback query, which can be a success or
+     *   failure.
      */
     abstract operator fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult
 }

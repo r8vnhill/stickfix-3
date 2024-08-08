@@ -164,13 +164,14 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     }
 
     /**
-     * Sets the state of a user in the database. This function updates the user's state both in-memory and in the database,
-     * ensuring that the user's state is consistently managed.
+     * Sets the state of a user in the database. This function updates the user's state both in-memory and in the
+     * database, ensuring that the user's state is consistently managed.
      *
-     * @param state The new state to set for the user. This state is represented as an instance of the `State` interface.
+     * @param state The new state to set for the user. This state is represented as an instance of the `State`
+     *   interface.
      * @return `DatabaseOperationResult` indicating the success or failure of the operation. On success, it returns a
-     *         `DatabaseOperationSuccess` with the updated state. On failure, it returns a `DatabaseOperationFailure` with
-     *         the appropriate error message and exception.
+     *   `DatabaseOperationSuccess` with the updated state. On failure, it returns a `DatabaseOperationFailure`with the
+     *   appropriate error message and exception.
      */
     fun setUserState(state: State): Either<DatabaseOperationFailure, DatabaseOperationSuccess<Int>> =
         executeDatabaseOperationSafely(database) {

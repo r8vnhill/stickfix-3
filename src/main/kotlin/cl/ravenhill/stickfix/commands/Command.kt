@@ -7,29 +7,24 @@ package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.db.StickfixDatabase
 
 /**
- * Represents a command to be executed within the Stickfix bot application. This sealed interface defines the essential
- * properties and method that any command must implement, ensuring consistent interaction with the bot, the user, and
- * the database service.
+ * Represents a command in a Telegram bot. This sealed interface defines the essential structure for commands, ensuring
+ * that each command has access to the user initiating the command and the bot processing it. Implementations of this
+ * interface must define the logic for executing the command.
  *
- * @property user The `StickfixUser` instance representing the user issuing the command. This provides read-only access to
- *   basic user information like username and user ID.
- * @property bot The `StickfixBot` instance representing the bot that processes the command. This allows  the command to
- *   interact with the bot's functionalities, such as sending messages or performing actions on behalf of the user.
+ * @property user The `StickfixUser` instance representing the user who initiated the command.
+ * @property bot The `StickfixBot` instance used to process the command and interact with the Telegram API.
  */
 sealed interface Command {
     val user: StickfixUser
     val bot: StickfixBot
 
     /**
-     * Executes the command, performing the necessary actions and returning the result of the operation. Implementing
-     * classes must define the specific logic for command execution, utilizing the provided bot instance, user
-     * information, and database service.
+     * Executes the command. This operator function must be implemented by all subclasses to define the logic for
+     * executing the command, interacting with necessary services and components.
      *
-     * @return CommandResult The result of the command execution, indicating success or failure along with any relevant
-     *   messages or data.
+     * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
      */
-    fun execute(): CommandResult
+    operator fun invoke(): CommandResult
 }
