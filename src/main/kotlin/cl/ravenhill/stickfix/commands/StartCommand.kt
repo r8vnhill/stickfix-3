@@ -90,16 +90,18 @@ data class StartCommand(override val user: StickfixUser, override val bot: Stick
      */
     private fun sendRegistrationPrompt(user: StickfixUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
-        return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
-            ifLeft = {
-                user.onIdle(bot)
-                CommandFailure(user, "Failed to send registration prompt.")
-            },
-            ifRight = {
-                user.onStart(bot)
-                CommandSuccess(user, "Registration prompt sent.")
-            }
-        )
+        with(bot) {
+            return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
+                ifLeft = {
+                    user.onIdle()
+                    CommandFailure(user, "Failed to send registration prompt.")
+                },
+                ifRight = {
+                    user.onStart(bot)
+                    CommandSuccess(user, "Registration prompt sent.")
+                }
+            )
+        }
     }
 
     /**

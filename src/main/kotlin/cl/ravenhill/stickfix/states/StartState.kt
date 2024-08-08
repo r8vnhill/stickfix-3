@@ -4,6 +4,7 @@ import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
+import cl.ravenhill.stickfix.logInfo
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.slf4j.LoggerFactory
@@ -45,6 +46,14 @@ data class StartState(override val user: StickfixUser) : State {
                 "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
             )
         }
+    }
+
+    context(StickfixBot)
+    override fun onStartRejection(): TransitionResult {
+        logInfo(logger) { "User ${user.debugInfo} chose not to register." }
+        user.state = StartRejectionState(user)
+        databaseService.setUserState<StartRejectionState>(user)
+        return TransitionSuccess(user.state)
     }
 
     /**

@@ -29,17 +29,19 @@ fun handleCommonConfirmation(
     user: StickfixUser,
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
-    additionalOperations()
-    logInfo(logger) { "User ${user.debugInfo} confirmed action" }
-    bot.sendMessage(user, message).fold(
-        ifLeft = {
-            BotFailure("Failed to send confirmation message", it)
-        },
-        ifRight = {
-            user.onIdle(bot)
-            BotSuccess("Confirmation message sent", it)
-        }
-    )
+    with(bot) {
+        additionalOperations()
+        logInfo(logger) { "User ${user.debugInfo} confirmed action" }
+        bot.sendMessage(user, message).fold(
+            ifLeft = {
+                BotFailure("Failed to send confirmation message", it)
+            },
+            ifRight = {
+                user.onIdle()
+                BotSuccess("Confirmation message sent", it)
+            }
+        )
+    }
 }
 
 /**
@@ -58,10 +60,12 @@ fun handleCommonRejection(
     user: StickfixUser,
     additionalOperations: Transaction.() -> Unit,
 ): BotResult<*> = transaction {
-    additionalOperations()
-    logInfo(logger) { "User ${user.debugInfo} denied action" }
-    bot.sendMessage(user, message).also {
-        user.onIdle(bot)
-        verifyUserDeletion(it.flatten(), user)
-    }.flatten()
+    with(bot) {
+        additionalOperations()
+        logInfo(logger) { "User ${user.debugInfo} denied action" }
+        bot.sendMessage(user, message).also {
+            user.onIdle()
+            verifyUserDeletion(it.flatten(), user)
+        }.flatten()
+    }
 }

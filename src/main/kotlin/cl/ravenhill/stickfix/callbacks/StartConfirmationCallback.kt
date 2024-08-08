@@ -10,8 +10,10 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.logDebug
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
+import cl.ravenhill.stickfix.states.TransitionSuccess
 
 /**
  * A constant representing the welcome message sent to users when they successfully register  with
@@ -141,15 +143,15 @@ data object StartConfirmationNo : StartConfirmationCallback() {
      *   appropriate messages delivered via the bot.
      */
     override fun invoke(user: StickfixUser, bot: StickfixBot): CallbackResult {
-        user.onRejection(bot)
-        val logMessage = "User ${user.debugInfo} chose not to register."
-        logInfo(logger) { logMessage }
-        val message = "You have chosen not to register. Remember you can always register later!"
+        with(bot) {
+            val transitionResult = user.onStartRejection().nextState.onIdle()
+            logDebug(logger, transitionResult::toString)
+            return when (transitionResult) {
+                is TransitionSuccess -> CallbackSuccess(
+                    "User ${user.debugInfo} chose not to register. Transitioned to ${transitionResult.nextState}"
+                )
 
-        return sendMessage(bot, user, message).also {
-            if (it is CallbackSuccess) {
-                user.onIdle(bot)
-                logInfo(logger) { "User ${user.debugInfo} set to idle state" }
+                else -> CallbackFailure("Failed to transition user ${user.debugInfo} to ${transitionResult.nextState}")
             }
         }
     }

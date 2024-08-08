@@ -66,14 +66,16 @@ sealed interface State {
     }
 
     /**
-     * Handles the transition to the idle state.
+     * Transitions the user to the idle state. This function sets the user's state to `IdleState`, updates the state in
+     * the database, and returns a `TransitionSuccess` indicating that the transition to the idle state was successful.
      *
-     * @param bot The `StickfixBot` instance used to send messages to the user.
-     * @return TransitionResult Indicates the success of transitioning to the idle state.
+     * @receiver The `StickfixBot` instance used to interact with the bot's functionalities and manage the database
+     *   service.
+     * @return `TransitionResult` indicating the success of the transition to the idle state.
      */
-    fun onIdle(bot: StickfixBot): TransitionResult {
-        user.state = IdleState(user)
-        bot.databaseService.setUserState<IdleState>(user.userId)
+    context(StickfixBot)
+    fun onIdle(): TransitionResult {
+        databaseService.setUserState(IdleState(user))
         return TransitionSuccess(user.state)
     }
 
@@ -89,16 +91,17 @@ sealed interface State {
     }
 
     /**
-     * Handles the rejection of an action within a specific state. This function logs an error message indicating that
-     * the user attempted to reject an action from the current state and returns a `TransitionFailure` to indicate that
-     * the rejection was not successful.
+     * Handles the rejection of the start command within the current state by logging an error message and returning a
+     * `TransitionFailure`. This function is called when a user attempts to reject the start command, indicating that
+     * the transition to a state representing the rejection of the start command has failed.
      *
-     * @param bot The `StickfixBot` instance used to interact with the bot's functionalities.
-     * @return `TransitionResult` indicating the failure to transition from the current state.
+     * @return `TransitionResult` indicating the failure to transition to a state representing the rejection of the
+     *   start command.
      */
-    fun onRejection(bot: StickfixBot): TransitionResult {
+    context(StickfixBot)
+    fun onStartRejection(): TransitionResult {
         logError(logger) { "User ${user.debugInfo} attempted to reject from state ${javaClass.simpleName}" }
-        return TransitionFailure(this)
+        return TransitionFailure(this@State)
     }
 }
 

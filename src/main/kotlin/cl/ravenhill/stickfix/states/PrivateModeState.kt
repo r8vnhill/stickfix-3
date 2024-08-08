@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-class PrivateModeState(override val user: StickfixUser) : State {
+data class PrivateModeState(override val user: StickfixUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     init {

@@ -15,6 +15,7 @@ import cl.ravenhill.stickfix.db.schema.Meta
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.states.IdleState
+import cl.ravenhill.stickfix.states.State
 import cl.ravenhill.stickfix.states.resolveState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -33,6 +34,8 @@ import org.slf4j.LoggerFactory
  * @property driverName The name of the database driver.
  */
 class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) {
+
+    private val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
     /**
      * The database instance used for performing database operations. This property is initialized during the `init`
@@ -150,15 +153,34 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * the simple name of the specified class type `T`.
      *
      * @param T The type of the state to set for the user. This must be a class type.
-     * @param userId The ID of the user whose state is to be updated.
+     * @param user The `StickfixUser` instance representing the user.
      */
-    inline fun <reified T> setUserState(userId: Long) = executeDatabaseOperationSafely(database) {
+    inline fun <reified T> setUserState(user: StickfixUser) = executeDatabaseOperationSafely(database) {
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
-        logInfo(logger) { "Setting user $userId state to ${T::class.simpleName}" }
-        Users.update({ Users.id eq userId }) {
+        logInfo(logger) { "Setting user ${user.userId} state to ${T::class.simpleName}" }
+        Users.update({ Users.id eq user.userId }) {
             it[state] = T::class.simpleName!!
         }
     }
+
+    /**
+     * Sets the state of a user in the database. This function updates the user's state both in-memory and in the database,
+     * ensuring that the user's state is consistently managed.
+     *
+     * @param state The new state to set for the user. This state is represented as an instance of the `State` interface.
+     * @return `DatabaseOperationResult` indicating the success or failure of the operation. On success, it returns a
+     *         `DatabaseOperationSuccess` with the updated state. On failure, it returns a `DatabaseOperationFailure` with
+     *         the appropriate error message and exception.
+     */
+    fun setUserState(state: State): Either<DatabaseOperationFailure, DatabaseOperationSuccess<Int>> =
+        executeDatabaseOperationSafely(database) {
+            val user = state.user
+            logInfo(logger) { "Setting user ${user.userId} state to ${state::class.simpleName}" }
+            user.state = state
+            Users.update({ Users.id eq user.userId }) {
+                it[this.state] = state::class.simpleName!!
+            }
+        }
 
     /**
      * Returns a string representation of the `StickfixDatabase` instance, including the JDBC URL and driver name.

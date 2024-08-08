@@ -44,7 +44,7 @@ interface TransitionResult {
  *
  * @param nextState The state to which the system will transition after a successful operation.
  */
-class TransitionSuccess(override val nextState: State) : TransitionResult
+data class TransitionSuccess(override val nextState: State) : TransitionResult
 
 /**
  * Represents an unsuccessful outcome of a state transition, indicating that the operation or action
@@ -54,4 +54,4 @@ class TransitionSuccess(override val nextState: State) : TransitionResult
  * @param nextState The state to which the system will transition after a failed operation, typically
  * an error or recovery state.
  */
-class TransitionFailure(override val nextState: State) : TransitionResult
+data class TransitionFailure(override val nextState: State) : TransitionResult

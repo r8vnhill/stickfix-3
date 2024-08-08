@@ -37,17 +37,6 @@ data class StickfixUser(
      */
     val debugInfo: String get() = username.ifBlank { userId.toString() }
 
-    companion object {
-        /**
-         * Creates a `StickfixUser` instance from a given `TelegramUser`. This function extracts the necessary
-         * information from the `TelegramUser` and uses it to create a new `StickfixUser`.
-         *
-         * @param from The `TelegramUser` instance from which to create the `StickfixUser`.
-         * @return A new `StickfixUser` instance with the username and ID extracted from the `TelegramUser`.
-         */
-        fun from(from: TelegramUser) = StickfixUser(from.username ?: "unknown", from.id)
-    }
-
     /**
      * Handles the start of an interaction for the user, delegating the action to the current state.
      *
@@ -57,12 +46,17 @@ data class StickfixUser(
     fun onStart(bot: StickfixBot): TransitionResult = state.onStart(bot)
 
     /**
-     * Handles the transition to the idle state for the user, updating the user's state in the database.
+     * Transitions the user to the idle state by delegating the call to the current state's `onIdle` method. This
+     * function ensures that the transition logic defined in the current state is executed.
      *
-     * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
-     * @return TransitionResult The result of the transition to the idle state, indicating success or failure.
+     * @receiver The `StickfixBot` instance used to interact with the bot's functionalities and manage the database
+     *   service.
+     * @return `TransitionResult` indicating the result of the transition to the idle state, as determined by the
+     *   current state's `onIdle` method.
      */
-    fun onIdle(bot: StickfixBot) = state.onIdle(bot)
+    context(StickfixBot)
+    fun onIdle() = state.onIdle()
+
 
     /**
      * Handles the revocation process for the user, updating the user's state in the database.
@@ -80,5 +74,17 @@ data class StickfixUser(
      * @return `TransitionResult` indicating the result of the rejection handling, as determined by the current state's
      *   `onRejection` method.
      */
-    fun onRejection(bot: StickfixBot): TransitionResult = state.onRejection(bot)
+    context(StickfixBot)
+    fun onStartRejection(): TransitionResult = state.onStartRejection()
+
+    companion object {
+        /**
+         * Creates a `StickfixUser` instance from a given `TelegramUser`. This function extracts the necessary
+         * information from the `TelegramUser` and uses it to create a new `StickfixUser`.
+         *
+         * @param from The `TelegramUser` instance from which to create the `StickfixUser`.
+         * @return A new `StickfixUser` instance with the username and ID extracted from the `TelegramUser`.
+         */
+        fun from(from: TelegramUser) = StickfixUser(from.username ?: "unknown", from.id)
+    }
 }
