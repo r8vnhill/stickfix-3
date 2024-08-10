@@ -21,8 +21,8 @@ import com.github.kotlintelegrambot.entities.User as TelegramUser
  */
 data class StickfixUser(
     val username: String,
-    val id: Long,
-) {
+    override val id: Long,
+) : StickfixChat {
     /**
      * The state of the user within the StickFix bot. This property manages the current condition or phase
      * of interaction the user is in, which can dictate the bot's responses and actions.
@@ -35,7 +35,7 @@ data class StickfixUser(
      *
      * @return String The debug information for the user.
      */
-    val debugInfo: String get() = if (username.isNotBlank()) "'$username'" else id.toString()
+    override val debugInfo: String get() = if (username.isNotBlank()) "'$username'" else id.toString()
 
     /**
      * Handles the start of an interaction for the user, delegating the action to the current state.

@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.bot
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import cl.ravenhill.stickfix.bot.dispatch.registerHelpCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeDisabledCallback
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeEnabledCallback
@@ -17,6 +18,7 @@ import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationYes
 import cl.ravenhill.stickfix.bot.dispatch.registerStartCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationYes
+import cl.ravenhill.stickfix.chat.StickfixChat
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
 import cl.ravenhill.stickfix.db.TempDatabase
@@ -79,24 +81,24 @@ class StickfixBot(val databaseService: StickfixDatabase) {
      * Sends a message to a specific user via the Telegram bot. The message can include Markdown formatting
      * and optional interactive components such as keyboards.
      *
-     * @param user The `StickfixUser` instance representing the recipient of the message.
+     * @param chat The `StickfixUser` instance representing the recipient of the message.
      * @param message The text of the message to send, which may include Markdown formatting.
      * @param replyMarkup Optional parameter that allows adding interactive components to the message.
      * @return Either a `BotSuccess` or `BotFailure` result indicating the success or failure of the message sending
      *   operation.
      */
     fun sendMessage(
-        user: StickfixUser,
+        chat: StickfixChat,
         message: String,
         replyMarkup: ReplyMarkup? = null,
     ): Either<BotFailure<MessageSendingException>, BotSuccess<String>> =
-        _bot.sendMessage(ChatId.fromId(user.id), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
+        _bot.sendMessage(ChatId.fromId(chat.id), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
             ifSuccess = {
-                BotSuccess(message = "Message sent to user ${user.debugInfo}", data = message).right()
+                BotSuccess(message = "Message sent to user ${chat.debugInfo}", data = message).right()
             },
             ifError = {
                 BotFailure(
-                    message = "Failed to send message to user ${user.debugInfo}",
+                    message = "Failed to send message to user ${chat.debugInfo}",
                     data = MessageSendingException.from(it)
                 ).left()
             }
@@ -110,6 +112,7 @@ private fun registerCommands() {
         registerStartCommand()
         registerRevokeCommand()
         registerPrivateModeCommand()
+        registerHelpCommand()
         // endregion
         // region : Callback query registration
         registerStartConfirmationYes()

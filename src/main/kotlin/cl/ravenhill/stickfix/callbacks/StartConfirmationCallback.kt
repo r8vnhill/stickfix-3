@@ -123,7 +123,7 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      */
     context(StickfixBot)
     private fun sendWelcomeMessage(user: StickfixUser, result: TransitionSuccess): CallbackResult {
-        return sendMessage(user, WELCOME_MESSAGE).fold(
+        return sendMessage(user, welcomeMessage).fold(
             ifLeft = { CallbackFailure(it.toString()) },
             ifRight = { CallbackSuccess(result.toString()) }
         )
@@ -187,7 +187,10 @@ data object StartConfirmationNo : StartConfirmationCallback() {
 /**
  * A constant string that serves as the welcome message for new users when they register with the Stickfix bot.
  */
-private const val WELCOME_MESSAGE = "Welcome to Stickfix!"
+private val welcomeMessage = """
+    |Welcome to Stickfix!
+    |For a list of available commands, type /help.
+""".trimMargin()
 
 /**
  * Generates a message indicating that the user is already registered with the Stickfix bot.

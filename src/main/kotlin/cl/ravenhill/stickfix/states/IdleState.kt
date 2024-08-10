@@ -48,8 +48,16 @@ data class IdleState(override val user: StickfixUser) : State() {
      */
     context(StickfixBot)
     override fun onRevoke(): TransitionResult {
-        databaseService.setUserState(user, ::RevokeState)
-        return TransitionSuccess(user.state)
+        return databaseService.setUserState(user, ::RevokeState).fold(
+            ifLeft = {
+                logError(logger) { "Failed to update user state: $it" }
+                TransitionFailure(this)
+            },
+            ifRight = {
+                logDebug(logger) { "User ${user.debugInfo} is revoking registration" }
+                TransitionSuccess(it.data)
+            }
+        )
     }
 
     /**

@@ -33,23 +33,4 @@ sealed class Command {
      * A brief description of the command, providing context and information about its purpose and functionality.
      */
     abstract val description: String
-
-    /**
-     * Executes the revoke command. This method retrieves the user's information from the database, sends a confirmation
-     * message to the user, and updates the user's state based on their response.
-     *
-     * @param user The `StickfixUser` instance representing the user who invoked the command.
-     * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
-     */
-    context(StickfixBot)
-    operator fun invoke(user: StickfixUser): CommandResult = databaseService.getUser(user).fold(
-        ifLeft = { handleUserNotRegistered(user) },
-        ifRight = { handleUserRegistered(user) }
-    )
-
-    context(StickfixBot)
-    protected abstract fun handleUserRegistered(user: StickfixUser): CommandResult
-
-    context(StickfixBot)
-    protected abstract fun handleUserNotRegistered(user: StickfixUser): CommandResult
 }

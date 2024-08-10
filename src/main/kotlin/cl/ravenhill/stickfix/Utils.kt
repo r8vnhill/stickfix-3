@@ -111,7 +111,7 @@ internal fun handleUserAction(
     onSuccess: StickfixUser.() -> Unit
 ): CommandResult {
     logInfo(logger) { "User ${user.debugInfo} $actionDescription" }
-    return sendMessage(user = user, message = message, replyMarkup = replyMarkup).fold(
+    return sendMessage(chat = user, message = message, replyMarkup = replyMarkup).fold(
         ifLeft = { failure ->
             logError(logger) { "Failed to send prompt to user ${user.debugInfo}: $failure" }
             CommandFailure(user, "Failed to send message to user")

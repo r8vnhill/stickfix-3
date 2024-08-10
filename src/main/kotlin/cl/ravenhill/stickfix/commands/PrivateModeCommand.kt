@@ -22,7 +22,7 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
  * @property description A brief description of what the command does, informing users that private mode will make all
  *   added stickers private and only visible to them.
  */
-data object PrivateModeCommand : Command() {
+data object PrivateModeCommand : UserChatCommand() {
     override val name = "private"
 
     override val description =

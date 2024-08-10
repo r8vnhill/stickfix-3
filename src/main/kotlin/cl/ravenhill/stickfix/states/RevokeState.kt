@@ -4,7 +4,6 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
-import org.slf4j.LoggerFactory
 
 /**
  * Represents the state where a user can confirm or deny the revocation of their registration in the Stickfix bot
@@ -26,6 +25,7 @@ data class RevokeState(override val user: StickfixUser) : State() {
             },
             ifRight = {
                 logInfo(logger) { "User ${user.debugInfo} deleted successfully." }
+                sendMessage(user, "Your registration has been revoked.")
                 TransitionSuccess(IdleState(user))
             }
         )

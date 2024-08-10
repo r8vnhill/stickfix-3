@@ -5,7 +5,7 @@
 
 package cl.ravenhill.stickfix.commands
 
-import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.chat.StickfixChat
 
 /**
  * Represents the result of a command executed within an application, encapsulating the outcome
@@ -38,7 +38,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
  *  or additional information about the result.
  */
 sealed interface CommandResult {
-    val user: StickfixUser
+    val user: StickfixChat
     val message: String
 }
 
@@ -49,8 +49,8 @@ sealed interface CommandResult {
  * @param message A descriptive message about the success of the command.
  */
 data class CommandSuccess(
-    override val user: StickfixUser,
-    override val message: String
+    override val user: StickfixChat,
+    override val message: String,
 ) : CommandResult
 
 /**
@@ -60,6 +60,6 @@ data class CommandSuccess(
  * @param message A descriptive message about the failure of the command.
  */
 data class CommandFailure(
-    override val user: StickfixUser,
-    override val message: String
+    override val user: StickfixChat,
+    override val message: String,
 ) : CommandResult

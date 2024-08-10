@@ -5,6 +5,7 @@ import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.handleUserAction
+import cl.ravenhill.stickfix.handleUserNotRegistered
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -14,7 +15,7 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
  * Represents a command to revoke a user's registration in the Stickfix bot. This command handles the logic for
  * confirming the user's intention to revoke their registration and updating the user's state accordingly.
  */
-data object RevokeCommand : Command() {
+data object RevokeCommand : UserChatCommand() {
 
     override val name = "revoke"
 
@@ -32,7 +33,7 @@ data object RevokeCommand : Command() {
      */
     context(StickfixBot)
     override fun handleUserNotRegistered(user: StickfixUser): CommandResult =
-        cl.ravenhill.stickfix.handleUserNotRegistered(
+        handleUserNotRegistered(
             user,
             action = "revoke registration",
             failureMessage = "You are not registered in the database, cannot revoke registration",
@@ -54,8 +55,8 @@ data object RevokeCommand : Command() {
     override fun handleUserRegistered(user: StickfixUser): CommandResult {
         return handleUserAction(
             user = user,
-            actionDescription = "is setting private mode",
-            message = "Do you want to enable private mode?",
+            actionDescription = "is revoking registration",
+            message = "Are you sure you want to revoke your registration?",
             replyMarkup = inlineKeyboardMarkup(),
             logger = logger
         ) {
