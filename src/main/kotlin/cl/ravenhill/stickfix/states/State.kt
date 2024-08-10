@@ -5,14 +5,11 @@
 
 package cl.ravenhill.stickfix.states
 
-import cl.ravenhill.stickfix.bot.BotFailure
-import cl.ravenhill.stickfix.bot.BotResult
-import cl.ravenhill.stickfix.bot.BotSuccess
+import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.logError
-import org.jetbrains.exposed.sql.selectAll
+import cl.ravenhill.stickfix.logInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -32,7 +29,7 @@ sealed class State {
      * A logger instance for logging state-related actions. This logger is private to the state and is used to record
      * activities such as transitions and errors.
      */
-    private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
+    protected val logger: Logger get() = LoggerFactory.getLogger(javaClass)
 
     /**
      * Logs an error message for unauthorized or invalid state transitions.
@@ -125,19 +122,54 @@ sealed class State {
         logTransitionFailure("revoke")
         return TransitionFailure(this)
     }
+
+    /**
+     * Enables private mode for the current user in the Stickfix bot application. This function updates the user's
+     * private mode setting in the database to `PrivateMode.ENABLED` and logs the operation. If the database update is
+     * successful, the function returns a `TransitionSuccess` result indicating that the transition to private mode was
+     * successful. If the update fails, it logs the error and returns a `TransitionFailure`.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return `TransitionResult` indicating the outcome of the operation to enable private mode. The result is either a
+     *   `TransitionSuccess` if the private mode was enabled successfully, or a `TransitionFailure` if the operation
+     *   failed.
+     */
+    context(StickfixBot)
+    open fun onPrivateModeEnabled(): TransitionResult {
+        logTransitionFailure("enable private mode")
+        return TransitionFailure(this)
+    }
+
+    /**
+     * Disables private mode for the current user in the Stickfix bot application. This function updates the user's
+     * private mode setting in the database to `PrivateMode.DISABLED` and logs the operation. If the database update is
+     * successful, the function returns a `TransitionSuccess` result indicating that the transition to disable private
+     * mode was successful. If the update fails, it logs the error and returns a `TransitionFailure`.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return `TransitionResult` indicating the outcome of the operation to disable private mode. The result is either
+     *   a `TransitionSuccess` if the private mode was disabled successfully, or a `TransitionFailure` if the operation
+     *   failed.
+     */
+    context(StickfixBot)
+    open fun onPrivateModeDisabled(): TransitionResult {
+        logTransitionFailure("disable private mode")
+        return TransitionFailure(this)
+    }
+
+    /**
+     * Handles the transition to private mode in the Stickfix bot application. This function is intended to be
+     * overridden by specific states that support private mode. By default, it logs a transition failure message
+     * indicating that enabling private mode is not supported in the current state and returns a `TransitionFailure`.
+     *
+     * @receiver StickfixBot The bot instance used to manage the transition and interact with the Telegram API.
+     * @return TransitionResult The result of the attempted transition, which by default is a `TransitionFailure`
+     *   indicating that private mode cannot be enabled from the current state.
+     */
+    context(StickfixBot)
+    open fun onPrivateMode(): TransitionResult {
+        logTransitionFailure("enable private mode")
+        return TransitionFailure(this)
+    }
 }
 
-/**
- * Verifies that the user has been deleted from the database.
- *
- * @param result The result of the previous operation, typically a success.
- * @param user The `StickfixUser` instance representing the user whose deletion is being verified.
- * @return BotResult<*> The result of the verification, indicating success or failure.
- */
-fun verifyUserDeletion(result: BotResult<*>, user: StickfixUser): BotResult<*> {
-    if (result is BotSuccess) {
-        val exists = Users.selectAll().where { Users.id eq user.id }.count() > 0
-        if (exists) return BotFailure("User was not deleted", false)
-    }
-    return result
-}

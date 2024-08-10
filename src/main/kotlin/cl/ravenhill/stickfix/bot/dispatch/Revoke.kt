@@ -11,6 +11,7 @@ import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.RevokeCommand
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
+import cl.ravenhill.stickfix.registerCommand
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
@@ -25,20 +26,7 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Revoke")
  */
 context(StickfixBot, Dispatcher)
 internal fun registerRevokeCommand() {
-    command(RevokeCommand.NAME) {
-        val user = message.from?.let {
-            StickfixUser.from(it)
-        }
-        if (user == null) {
-            logError(logger) { "Failed to create StickfixUser from message: $message" }
-            return@command
-        }
-        logInfo(logger) { "Received revoke command from ${user.debugInfo}" }
-        when (val result = RevokeCommand(user)) {
-            is CommandSuccess -> logInfo(logger) { "Revoke command executed successfully: $result" }
-            is CommandFailure -> logError(logger) { "Revoke command failed: $result" }
-        }
-    }
+    registerCommand(RevokeCommand.name, logger) { RevokeCommand(it) }
 }
 
 /**

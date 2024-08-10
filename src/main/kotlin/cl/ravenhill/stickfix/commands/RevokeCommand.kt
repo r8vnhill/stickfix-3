@@ -4,37 +4,21 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.handleUserAction
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
-import org.slf4j.LoggerFactory
 
 /**
  * Represents a command to revoke a user's registration in the Stickfix bot. This command handles the logic for
  * confirming the user's intention to revoke their registration and updating the user's state accordingly.
  */
-data object RevokeCommand : Command {
+data object RevokeCommand : Command() {
 
-    /**
-     * The name of the command, used for identifying and registering the command in the bot.
-     */
-    const val NAME = "revoke"
+    override val name = "revoke"
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    /**
-     * Executes the revoke command. This method retrieves the user's information from the database, sends a confirmation
-     * message to the user, and updates the user's state based on their response.
-     *
-     * @param user The `StickfixUser` instance representing the user who invoked the command.
-     * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
-     */
-    context(StickfixBot)
-    override fun invoke(user: StickfixUser): CommandResult = databaseService.getUser(user).fold(
-        ifLeft = { handleUserNotRegistered(user) },
-        ifRight = { handleUserRevocation(user) }
-    )
+    override val description = "Revoke your registration in the Stickfix bot"
 
     /**
      * Handles the scenario where a user attempts to revoke their registration but is not found in the database.
@@ -47,19 +31,13 @@ data object RevokeCommand : Command {
      *   sending fails, the function logs the error and returns a `CommandFailure` with the appropriate error message.
      */
     context(StickfixBot)
-    private fun handleUserNotRegistered(user: StickfixUser): CommandResult {
-        logError(logger) { "User ${user.debugInfo} does not exist in the database, cannot revoke" }
-        return sendMessage(user, "You are not registered in the database, cannot revoke").fold(
-            ifLeft = { failure ->
-                logError(logger) { "Failed to send message to user ${user.debugInfo}: $failure" }
-                CommandFailure(user, "Failed to send message to user")
-            },
-            ifRight = { success ->
-                logInfo(logger) { "Sent message to user ${user.debugInfo}" }
-                CommandFailure(user, "User not registered in the database, message sent: $success")
-            }
+    override fun handleUserNotRegistered(user: StickfixUser): CommandResult =
+        cl.ravenhill.stickfix.handleUserNotRegistered(
+            user,
+            action = "revoke registration",
+            failureMessage = "You are not registered in the database, cannot revoke registration",
+            logger = logger
         )
-    }
 
     /**
      * Handles the process of revoking a user's registration in the Stickfix bot. This function logs the revocation
@@ -73,23 +51,16 @@ data object RevokeCommand : Command {
      *   error message.
      */
     context(StickfixBot)
-    private fun handleUserRevocation(user: StickfixUser): CommandResult {
-        logInfo(logger) { "User ${user.debugInfo} revoked the bot" }
-        return sendMessage(
+    override fun handleUserRegistered(user: StickfixUser): CommandResult {
+        return handleUserAction(
             user = user,
-            message = "Are you sure you want to revoke your registration?",
-            replyMarkup = inlineKeyboardMarkup()
-        ).fold(
-            ifLeft = { failure ->
-                logError(logger) { "Failed to send revoke prompt to user ${user.debugInfo}: $failure" }
-                CommandFailure(user, "Failed to send message to user")
-            },
-            ifRight = {
-                logInfo(logger) { "Sent revoke prompt to user ${user.debugInfo}" }
-                user.onRevoke()
-                CommandSuccess(user, "Revoke command sent successfully")
-            }
-        )
+            actionDescription = "is setting private mode",
+            message = "Do you want to enable private mode?",
+            replyMarkup = inlineKeyboardMarkup(),
+            logger = logger
+        ) {
+            onRevoke()  // Additional action to take on success
+        }
     }
 
     /**

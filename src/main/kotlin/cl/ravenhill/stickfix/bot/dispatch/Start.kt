@@ -63,7 +63,7 @@ internal fun registerStartConfirmationNo() {
  */
 context(StickfixBot, Dispatcher)
 internal fun registerStartCommand() {
-    command(StartCommand.NAME) {
+    command(StartCommand.name) {
         logInfo(logger) { "Received start command from ${message.from}" }
         when (val result = StartCommand(StickfixUser.from(message.from!!))) {
             is CommandSuccess -> logInfo(logger) { "Start command executed successfully: $result" }

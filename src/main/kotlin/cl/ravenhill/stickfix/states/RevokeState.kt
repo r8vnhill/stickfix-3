@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
 data class RevokeState(override val user: StickfixUser) : State() {
-    private val logger = LoggerFactory.getLogger(javaClass)
 
     context(StickfixBot) override fun onRevokeConfirmation(): TransitionResult {
         logInfo(logger) { "User ${user.debugInfo} confirmed revocation." }

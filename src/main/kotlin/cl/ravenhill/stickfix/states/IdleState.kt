@@ -9,7 +9,6 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logDebug
 import cl.ravenhill.stickfix.logError
-import org.slf4j.LoggerFactory
 
 /**
  * Represents the idle state for a user in the Stickfix bot application. This state indicates that the user is currently
@@ -20,8 +19,6 @@ import org.slf4j.LoggerFactory
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
 data class IdleState(override val user: StickfixUser) : State() {
-
-    private val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
     /**
      * Handles the transition from idle state to start state when the user initiates a start action. Updates the user's
@@ -51,7 +48,19 @@ data class IdleState(override val user: StickfixUser) : State() {
      */
     context(StickfixBot)
     override fun onRevoke(): TransitionResult {
-        user.state = RevokeState(user)
+        databaseService.setUserState(user, ::RevokeState)
+        return TransitionSuccess(user.state)
+    }
+
+    /**
+     * Handles the transition from idle state to private mode state when the user initiates a private mode action. Updates
+     * the user's state to `PrivateModeState` and returns a successful transition result.
+     *
+     * @return TransitionResult The result of the transition to `PrivateModeState`, indicating success.
+     */
+    context(StickfixBot)
+    override fun onPrivateMode(): TransitionResult {
+        databaseService.setUserState(user, ::PrivateModeState)
         return TransitionSuccess(user.state)
     }
 }

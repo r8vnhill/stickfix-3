@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.bot
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeDisabledCallback
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeEnabledCallback
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeCommand
@@ -57,7 +58,7 @@ class StickfixBot(val databaseService: StickfixDatabase) {
             ifLeft = { throw it.data },
             ifRight = { it.data }
         )
-        registerCommands(this@StickfixBot)
+        registerCommands()
     }
 
     /**
@@ -103,19 +104,20 @@ class StickfixBot(val databaseService: StickfixDatabase) {
 }
 
 context(StickfixBot, Bot.Builder)
-private fun registerCommands(bot: StickfixBot) {
+private fun registerCommands() {
     dispatch {
         // region : Command registration
         registerStartCommand()
         registerRevokeCommand()
+        registerPrivateModeCommand()
         // endregion
         // region : Callback query registration
         registerStartConfirmationYes()
         registerStartConfirmationNo()
         registerRevokeConfirmationYes()
         registerRevokeConfirmationNo()
-        registerPrivateModeEnabledCallback(bot)
-        registerPrivateModeDisabledCallback(bot)
+        registerPrivateModeEnabledCallback()
+        registerPrivateModeDisabledCallback()
         // endregion
     }
 }

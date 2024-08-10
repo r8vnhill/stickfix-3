@@ -99,6 +99,43 @@ data class StickfixUser(
     context(StickfixBot)
     fun onRevokeConfirmation(): TransitionResult = state.onRevokeConfirmation()
 
+    /**
+     * Handles the enabling of private mode by delegating the process to the current state of the user. This function
+     * calls the `onPrivateModeEnabled` method on the user's current state to handle the transition and actions
+     * associated with enabling private mode.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and manage the user's state.
+     * @return TransitionResult The result of the state transition, indicating the outcome of enabling private mode.
+     *   It can be a success if the transition was valid, or a failure if enabling private mode was not allowed from the
+     *   current state.
+     */
+    context(StickfixBot)
+    fun onPrivateModeEnabled(): TransitionResult = state.onPrivateModeEnabled()
+
+    /**
+     * Handles the transition to disable private mode for the current state. This function delegates the disabling of
+     * private mode to the current state of the user, allowing the state to manage how private mode is disabled. The
+     * result of this operation is returned as a `TransitionResult`, which indicates whether the transition was
+     * successful or not.
+     *
+     * @return `TransitionResult` indicating the outcome of the transition to disable private mode. This result can be
+     *   either a `TransitionSuccess` if the transition was successful, or a `TransitionFailure` if the transition failed.
+     */
+    context(StickfixBot)
+    fun onPrivateModeDisabled(): TransitionResult = state.onPrivateModeDisabled()
+
+    /**
+     * Handles the transition to private mode for the current state of the user in the Stickfix bot application.
+     * This function delegates the responsibility of processing the private mode transition to the user's current state.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the user's state and manage the private mode transition.
+     * @return TransitionResult The result of the private mode transition, as determined by the user's current state.
+     * This can be either a `TransitionSuccess` indicating a successful transition, or a `TransitionFailure` if the
+     * transition was not successful.
+     */
+    context(StickfixBot)
+    fun onPrivateMode(): TransitionResult = state.onPrivateMode()
+
     override fun toString() = "StickfixUser(username='$username', id=$id, state=${state::class.simpleName})"
 
     companion object {

@@ -76,18 +76,17 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
  */
 data object RevokeConfirmationNo : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
-    context(StickfixBot) override fun handleUserRegistered(user: StickfixUser): CallbackResult {
+    context(StickfixBot) override fun handleUserRegistered(user: StickfixUser): CallbackResult =
         databaseService.setUserState(user, ::IdleState).fold(
             ifLeft = {
                 logError(logger) { "Failed to set user ${user.username} state to Idle: $it" }
-                return CallbackFailure("Failed to set user state.")
+                CallbackFailure("Failed to set user state.")
             },
             ifRight = {
                 logInfo(logger) { "User ${user.username} retained registration." }
-                return CallbackSuccess("User retained registration.")
+                CallbackSuccess("User retained registration.")
             }
         )
-    }
 
     context(StickfixBot) override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
         logError(logger) { "User ${user.username} is not registered. Cannot reject revocation." }
