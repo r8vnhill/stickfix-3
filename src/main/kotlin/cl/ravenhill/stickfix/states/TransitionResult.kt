@@ -34,7 +34,7 @@ package cl.ravenhill.stickfix.states
  *  The state to which the system will transition after the current operation. This could be the
  *  next logical state on success or a specific error state on failure.
  */
-interface TransitionResult {
+sealed interface TransitionResult {
     val nextState: State
 }
 

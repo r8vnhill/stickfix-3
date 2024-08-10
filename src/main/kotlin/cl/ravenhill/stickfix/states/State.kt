@@ -35,6 +35,15 @@ sealed class State {
     private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
 
     /**
+     * Logs an error message for unauthorized or invalid state transitions.
+     *
+     * @param action The action that was attempted, leading to the transition failure.
+     */
+    private fun logTransitionFailure(action: String) {
+        logError(logger) { "User ${user.debugInfo} attempted to $action from state ${javaClass.simpleName}" }
+    }
+
+    /**
      * Handles the start of an interaction within this state. By default, this method logs a warning
      * indicating an unauthorized or unexpected attempt to start from the current state and returns
      * a `TransitionFailure` with the current state as the next state, suggesting no transition
@@ -45,7 +54,7 @@ sealed class State {
      */
     context(StickfixBot)
     open fun onStart(): TransitionResult {
-        logError(logger) { "User ${user.debugInfo} attempted to start from state ${javaClass.simpleName}" }
+        logTransitionFailure("start")
         return TransitionFailure(this)
     }
 
@@ -70,7 +79,7 @@ sealed class State {
      */
     context(StickfixBot)
     open fun onRevoke(): TransitionResult {
-        logError(logger) { "User ${user.debugInfo} attempted to revoke from state ${javaClass.simpleName}" }
+        logTransitionFailure("revoke")
         return TransitionFailure(this)
     }
 
@@ -84,7 +93,7 @@ sealed class State {
      */
     context(StickfixBot)
     open fun onStartRejection(): TransitionResult {
-        logError(logger) { "User ${user.debugInfo} attempted to reject start from state ${javaClass.simpleName}" }
+        logTransitionFailure("reject start")
         return TransitionFailure(this@State)
     }
 
@@ -99,8 +108,22 @@ sealed class State {
      */
     context(StickfixBot)
     open fun onStartConfirmation(): TransitionResult {
-        logError(logger) { "User ${user.debugInfo} attempted to confirm start from state ${javaClass.simpleName}" }
+        logTransitionFailure("confirm start")
         return TransitionFailure(this@State)
+    }
+
+    /**
+     * Handles the confirmation of the revoke action within the current state by logging an error message and returning a
+     * `TransitionFailure`. This function is called when a user attempts to confirm the revoke action, indicating that
+     * the transition to a state representing the revocation has failed.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
+     * @return `TransitionResult` indicating the failure to transition to a state representing the revoke action.
+     */
+    context(StickfixBot)
+    open fun onRevokeConfirmation(): TransitionResult {
+        logTransitionFailure("revoke")
+        return TransitionFailure(this)
     }
 }
 

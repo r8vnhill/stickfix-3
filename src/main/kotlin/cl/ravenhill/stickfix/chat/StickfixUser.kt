@@ -35,7 +35,7 @@ data class StickfixUser(
      *
      * @return String The debug information for the user.
      */
-    val debugInfo: String get() = username.ifBlank { id.toString() }
+    val debugInfo: String get() = if (username.isNotBlank()) "'$username'" else id.toString()
 
     /**
      * Handles the start of an interaction for the user, delegating the action to the current state.
@@ -85,6 +85,19 @@ data class StickfixUser(
      */
     context(StickfixBot)
     fun onStartConfirmation(): TransitionResult = state.onStartConfirmation()
+
+    /**
+     * Facilitates the confirmation of a user's revoke action by delegating the process to the current state of the user.
+     * This function calls the `onRevokeConfirmation` method on the user's current state to handle the confirmation of
+     * revocation.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and manage the user's state.
+     * @return TransitionResult The result of the state transition, indicating the outcome of the revoke confirmation
+     *   process. It can be a success if the transition was valid, or a failure if the revocation confirmation was not
+     *   allowed from the current state.
+     */
+    context(StickfixBot)
+    fun onRevokeConfirmation(): TransitionResult = state.onRevokeConfirmation()
 
     override fun toString() = "StickfixUser(username='$username', id=$id, state=${state::class.simpleName})"
 

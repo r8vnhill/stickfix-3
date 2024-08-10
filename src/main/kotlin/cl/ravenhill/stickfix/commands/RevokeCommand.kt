@@ -31,22 +31,65 @@ data object RevokeCommand : Command {
      * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
      */
     context(StickfixBot)
-    override fun invoke(user: StickfixUser): CommandResult {
-        logInfo(logger) { "User ${user.username.ifBlank { user.id.toString() }} revoked the bot" }
-        val result = databaseService.getUser(user).fold(
-            ifLeft = {
-                logError(logger) { "Failed to retrieve user: ${it.message}" }
-                CommandFailure(user, "User does not exist in the database, cannot revoke")
+    override fun invoke(user: StickfixUser): CommandResult = databaseService.getUser(user).fold(
+        ifLeft = { handleUserNotRegistered(user) },
+        ifRight = { handleUserRevocation(user) }
+    )
+
+    /**
+     * Handles the scenario where a user attempts to revoke their registration but is not found in the database.
+     * This function logs an error, attempts to send a message to the user informing them that they are not registered,
+     * and returns a `CommandResult` indicating the outcome of the operation.
+     *
+     * @param user The `StickfixUser` instance representing the user attempting to revoke their registration.
+     * @return `CommandResult` indicating the result of the operation. If the message is successfully sent to the user,
+     *   the function returns a `CommandFailure` with details about the failure to revoke the user. If the message
+     *   sending fails, the function logs the error and returns a `CommandFailure` with the appropriate error message.
+     */
+    context(StickfixBot)
+    private fun handleUserNotRegistered(user: StickfixUser): CommandResult {
+        logError(logger) { "User ${user.debugInfo} does not exist in the database, cannot revoke" }
+        return sendMessage(user, "You are not registered in the database, cannot revoke").fold(
+            ifLeft = { failure ->
+                logError(logger) { "Failed to send message to user ${user.debugInfo}: $failure" }
+                CommandFailure(user, "Failed to send message to user")
+            },
+            ifRight = { success ->
+                logInfo(logger) { "Sent message to user ${user.debugInfo}" }
+                CommandFailure(user, "User not registered in the database, message sent: $success")
+            }
+        )
+    }
+
+    /**
+     * Handles the process of revoking a user's registration in the Stickfix bot. This function logs the revocation
+     * action, sends a confirmation prompt to the user asking if they want to revoke their registration, and returns a
+     * `CommandResult` indicating the outcome of this process.
+     *
+     * @param user The `StickfixUser` instance representing the user attempting to revoke their registration.
+     * @return `CommandResult` indicating the result of the operation. If the message to confirm revocation is
+     *   successfully sent, the function returns a `CommandSuccess` and transitions the user to the appropriate state.
+     *   If the message sending fails, the function logs the error and returns a `CommandFailure` with the appropriate
+     *   error message.
+     */
+    context(StickfixBot)
+    private fun handleUserRevocation(user: StickfixUser): CommandResult {
+        logInfo(logger) { "User ${user.debugInfo} revoked the bot" }
+        return sendMessage(
+            user = user,
+            message = "Are you sure you want to revoke your registration?",
+            replyMarkup = inlineKeyboardMarkup()
+        ).fold(
+            ifLeft = { failure ->
+                logError(logger) { "Failed to send revoke prompt to user ${user.debugInfo}: $failure" }
+                CommandFailure(user, "Failed to send message to user")
             },
             ifRight = {
-                val message = "Are you sure you want to revoke your registration?"
-                sendMessage(user, message, replyMarkup = inlineKeyboardMarkup())
+                logInfo(logger) { "Sent revoke prompt to user ${user.debugInfo}" }
                 user.onRevoke()
                 CommandSuccess(user, "Revoke command sent successfully")
             }
         )
-        logInfo(logger) { "Revoke command result: $result" }
-        return result
     }
 
     /**

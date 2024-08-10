@@ -6,7 +6,9 @@ import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
-import org.jetbrains.exposed.sql.transactions.transaction
+import cl.ravenhill.stickfix.states.IdleState
+import cl.ravenhill.stickfix.states.TransitionFailure
+import cl.ravenhill.stickfix.states.TransitionSuccess
 
 /**
  * Represents a callback handler for confirming or rejecting the revocation of a user's registration. This sealed class
@@ -26,31 +28,43 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
 
     /**
-     * Handles the revocation confirmation by deleting the user from the database and sending a confirmation message.
+     * Handles the scenario where a user is registered in the main database and confirms their revocation. This function
+     * attempts to delete the user's record from the database. If successful, it logs the revocation and returns a
+     * `CallbackSuccess` result; otherwise, it logs the error and returns a `CallbackFailure`.
      *
-     * @param user The `StickfixUser` instance representing the user who confirmed the revocation.
-     * @return CallbackResult The result of the revocation confirmation, indicating success or failure.
+     * @param user The `StickfixUser` instance representing the user who initiated the revocation confirmation.
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and manage the database operations.
+     * @return `CallbackResult` The result of processing the revocation confirmation, indicating either success or
+     *   failure in deleting the user from the database.
      */
     context(StickfixBot)
-    override fun invoke(user: StickfixUser): CallbackResult = databaseService.deleteUser(user).fold(
-        ifLeft = {
-            logError(logger) { "Failed to revoke user ${user.debugInfo}" }
-            CallbackFailure(it.message)
-        },
-        ifRight = {
-            logInfo(logger) { "User ${user.username} has been revoked." }
-            sendMessage(user, "Your registration has been revoked.").fold(
-                ifLeft = {
-                    logInfo(logger) { "User ${user.username} has been revoked." }
-                    CallbackSuccess("Your registration has been revoked.")
-                },
-                ifRight = {
-                    logError(logger) { "Failed to send revocation message to user ${user.username}" }
-                    CallbackFailure(it.message)
-                }
-            )
+    override fun handleUserRegistered(user: StickfixUser): CallbackResult =
+        when (val result = user.onRevokeConfirmation()) {
+            is TransitionSuccess -> {
+                logInfo(logger) { "User ${user.username} revoked successfully." }
+                CallbackSuccess("User revoked.")
+            }
+
+            is TransitionFailure -> {
+                logError(logger) { "Failed to revoke user ${user.username}: $result" }
+                CallbackFailure("Failed to revoke user.")
+            }
         }
-    )
+
+    /**
+     * Handles the scenario where a user is not registered in the main database but attempts to confirm revocation. This
+     * function logs an error indicating that the user is not registered and returns a `CallbackFailure` result.
+     *
+     * @param user The `StickfixUser` instance representing the user who attempted the revocation confirmation.
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and manage the database operations.
+     * @return `CallbackResult` The result of the revocation confirmation attempt, which is always a failure in this
+     *   case since the user is not registered.
+     */
+    context(StickfixBot)
+    override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
+        logError(logger) { "User ${user.username} is not registered. Cannot confirm revocation." }
+        return CallbackFailure("User is not registered.")
+    }
 }
 
 /**
@@ -62,25 +76,21 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
  */
 data object RevokeConfirmationNo : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
-
-    /**
-     * Handles the revocation rejection by retaining the user's registration and sending a confirmation message.
-     *
-     * @param user The `StickfixUser` instance representing the user who rejected the revocation.
-     * @return CallbackResult The result of the revocation rejection, indicating success or failure.
-     */
-    context(StickfixBot)
-    override fun invoke(user: StickfixUser): CallbackResult {
-        logInfo(logger) { "User ${user.username} has chosen not to revoke." }
-        return sendMessage(user, "Your registration has not been revoked.").fold(
+    context(StickfixBot) override fun handleUserRegistered(user: StickfixUser): CallbackResult {
+        databaseService.setUserState(user, ::IdleState).fold(
             ifLeft = {
-                logInfo(logger) { "User ${user.username} has chosen not to revoke." }
-                CallbackSuccess("Your registration has not been revoked.")
+                logError(logger) { "Failed to set user ${user.username} state to Idle: $it" }
+                return CallbackFailure("Failed to set user state.")
             },
             ifRight = {
-                logError(logger) { "Failed to send revocation rejection message to user ${user.username}" }
-                CallbackFailure(it.message)
+                logInfo(logger) { "User ${user.username} retained registration." }
+                return CallbackSuccess("User retained registration.")
             }
         )
+    }
+
+    context(StickfixBot) override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
+        logError(logger) { "User ${user.username} is not registered. Cannot reject revocation." }
+        return CallbackFailure("User is not registered.")
     }
 }

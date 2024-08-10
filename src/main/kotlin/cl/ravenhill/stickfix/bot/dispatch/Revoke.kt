@@ -1,6 +1,8 @@
 package cl.ravenhill.stickfix.bot.dispatch
 
 import cl.ravenhill.stickfix.bot.StickfixBot
+import cl.ravenhill.stickfix.callbacks.CallbackFailure
+import cl.ravenhill.stickfix.callbacks.CallbackSuccess
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
@@ -24,8 +26,15 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Revoke")
 context(StickfixBot, Dispatcher)
 internal fun registerRevokeCommand() {
     command(RevokeCommand.NAME) {
-        logInfo(logger) { "Received revoke command" }
-        when (val result = RevokeCommand(StickfixUser.from(message.from!!))) {
+        val user = message.from?.let {
+            StickfixUser.from(it)
+        }
+        if (user == null) {
+            logError(logger) { "Failed to create StickfixUser from message: $message" }
+            return@command
+        }
+        logInfo(logger) { "Received revoke command from ${user.debugInfo}" }
+        when (val result = RevokeCommand(user)) {
             is CommandSuccess -> logInfo(logger) { "Revoke command executed successfully: $result" }
             is CommandFailure -> logError(logger) { "Revoke command failed: $result" }
         }
@@ -40,10 +49,12 @@ internal fun registerRevokeCommand() {
 context(StickfixBot, Dispatcher)
 internal fun registerRevokeConfirmationYes() {
     callbackQuery(RevokeConfirmationYes.name) {
-        databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { RevokeConfirmationYes(it.data) }
-        )
+        val user = StickfixUser.from(callbackQuery.from)
+        logInfo(logger) { "Received revoke confirmation from ${user.debugInfo}" }
+        when (val result = RevokeConfirmationYes(user)) {
+            is CallbackFailure -> logError(logger) { "Failed to revoke user: $result" }
+            is CallbackSuccess -> logInfo(logger) { "Revoked user: ${user.debugInfo}" }
+        }
     }
 }
 
@@ -55,9 +66,8 @@ internal fun registerRevokeConfirmationYes() {
 context(StickfixBot, Dispatcher)
 internal fun registerRevokeConfirmationNo() {
     callbackQuery(RevokeConfirmationNo.name) {
-        databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { RevokeConfirmationNo(it.data) }
-        )
+        val user = StickfixUser.from(callbackQuery.from)
+        logInfo(logger) { "Received revoke rejection from ${user.debugInfo}" }
+        RevokeConfirmationNo(user)
     }
 }

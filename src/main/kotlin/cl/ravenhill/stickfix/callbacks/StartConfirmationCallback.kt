@@ -25,33 +25,10 @@ import cl.ravenhill.stickfix.states.TransitionSuccess
  */
 sealed class StartConfirmationCallback : CallbackQueryHandler() {
 
-    /**
-     * Handles the logic when a user confirms the intention to start or register. It checks the user's registration
-     * status and responds appropriately by either registering the user or notifying them that they are already
-     * registered.
-     *
-     * @param user A `StickfixUser` instance representing the user interacting with the bot.
-     * @receiver bot A `StickfixBot` instance used to send messages back to the user.
-     * @return CallbackResult The result of the operation, indicating whether the process was successful or if the user
-     *   was already registered, with appropriate messages delivered via the bot.
-     */
-    context(StickfixBot)
-    override fun invoke(user: StickfixUser): CallbackResult = databaseService.getUser(user.id).fold(
-        ifLeft = { handleUserNotRegistered(user) },
-        ifRight = { CallbackFailure(alreadyRegisteredMessage(user)) }
-    )
-
-    /**
-     * Handles the scenario where a user is not registered in the main database. This function logs an informational
-     * message indicating that the user is not registered and proceeds to retrieve the user data from the temporary
-     * database for further processing.
-     *
-     * @param user The `StickfixUser` instance representing the user that is not registered in the main database.
-     * @return A `CallbackResult` that indicates the outcome of the process, which includes either successfully
-     *   retrieving the user from the temporary database or handling any errors that occur during the process.
-     */
-    context(StickfixBot)
-    protected abstract fun handleUserNotRegistered(user: StickfixUser): CallbackResult
+    context(StickfixBot) override fun handleUserRegistered(user: StickfixUser): CallbackResult {
+        logInfo(logger) { "User ${user.debugInfo} is already registered." }
+        return CallbackFailure(alreadyRegisteredMessage(user))
+    }
 
     /**
      * Retrieves a user from the temporary database. This function attempts to find the user in the temporary database

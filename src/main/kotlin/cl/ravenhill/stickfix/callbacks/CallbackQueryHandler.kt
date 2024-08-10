@@ -7,7 +7,6 @@ package cl.ravenhill.stickfix.callbacks
 
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.db.StickfixDatabase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -27,14 +26,40 @@ sealed class CallbackQueryHandler {
     abstract val name: String
 
     /**
-     * Processes a callback query for a specific user and bot instance. This method must be implemented by all
-     * subclasses to handle the callback query according to the handler's purpose.
+     * Processes a callback query for a specific user in the context of the Stickfix bot. This function retrieves the
+     * user's data from the main database and determines the appropriate action based on whether the user is found or
+     * not.
      *
      * @param user The `StickfixUser` instance representing the user who initiated the callback query.
-     * @receiver bot The `StickfixBot` instance used to process the callback query and interact with the Telegram API.
-     * @return `CallbackResult` indicating the result of processing the callback query, which can be a success or
-     *   failure.
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and manage the database operations.
+     * @return `CallbackResult` The result of processing the callback query, which can either be a success or a failure
+     *   depending on the user's registration status and the actions taken.
      */
     context(StickfixBot)
-    abstract operator fun invoke(user: StickfixUser): CallbackResult
+    operator fun invoke(user: StickfixUser): CallbackResult = databaseService.getUser(user.id).fold(
+        ifLeft = { handleUserNotRegistered(user) },
+        ifRight = { handleUserRegistered(it.data) }
+    )
+
+    /**
+     * Handles the scenario where a user is successfully retrieved from the main database. This function must be
+     * implemented by all subclasses to define the specific actions to take when the user is already registered.
+     *
+     * @param user The `StickfixUser` instance representing the user who is already registered in the main database.
+     * @return A `CallbackResult` that indicates the outcome of the process, which can either be a success or a failure
+     *   depending on the specific implementation.
+     */
+    context(StickfixBot)
+    protected abstract fun handleUserRegistered(user: StickfixUser): CallbackResult
+
+    /**
+     * Handles the scenario where a user is not registered in the main database. This function must be implemented by
+     * all subclasses to define the specific actions to take when the user is not registered.
+     *
+     * @param user The `StickfixUser` instance representing the user who is not registered in the main database.
+     * @return A `CallbackResult` that indicates the outcome of the process, which can either be a success or a failure
+     *   depending on the specific implementation.
+     */
+    context(StickfixBot)
+    protected abstract fun handleUserNotRegistered(user: StickfixUser): CallbackResult
 }
