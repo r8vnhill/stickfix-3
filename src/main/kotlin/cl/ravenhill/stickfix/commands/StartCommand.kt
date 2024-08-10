@@ -9,7 +9,9 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.logDebug
 import cl.ravenhill.stickfix.logInfo
+import cl.ravenhill.stickfix.logWarn
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
@@ -44,15 +46,14 @@ private fun initMessage(user: StickfixUser) = "Executing start command for user 
 /**
  * Represents a command to start or register a user in the Stickfix bot. This command handles the logic for welcoming
  * back returning users or prompting new users to register.
- *
- * @property user The `StickfixUser` instance representing the user who initiated the start command.
- * @property bot The `StickfixBot` instance used to process the command and interact with the Telegram API.
  */
-data class StartCommand(
-    override val user: StickfixUser,
-    override val bot: StickfixBot
-) : Command {
+data object StartCommand : Command {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * The name of the command, used for identifying and registering the command in the bot.
+     */
+    const val NAME = "start"
 
     /**
      * Executes the start command. This method checks if the user is already registered and sends an appropriate
@@ -60,14 +61,22 @@ data class StartCommand(
      *
      * @return `CommandResult` indicating the result of the command execution, which can be a success or failure.
      */
-    override fun invoke(): CommandResult {
+    context(StickfixBot)
+    override fun invoke(user: StickfixUser): CommandResult {
         logInfo(logger) { initMessage(user) }
-        val result = bot.databaseService.getUser(user).fold(
-            ifLeft = { sendRegistrationPrompt(user) },
+        return databaseService.getUser(user).fold(
+            ifLeft = {
+                logWarn(logger) { "User not found, sending registration prompt." }
+                tempDatabase.addUser(user).fold(
+                    ifLeft = { CommandFailure(user, "Failed to add user to temporary database.") },
+                    ifRight = {
+                        logDebug(logger) { "User added to temporary database: $it" }
+                        sendRegistrationPrompt(user)
+                    }
+                )
+            },
             ifRight = { sendWelcomeBackMessage(user) }
         )
-        logInfo(logger) { "Start command result: $result" }
-        return result
     }
 
     /**
@@ -76,10 +85,14 @@ data class StartCommand(
      * @param user The `StickfixUser` instance representing the user.
      * @return `CommandResult` indicating the success or failure of sending the welcome back message.
      */
-    private fun sendWelcomeBackMessage(user: StickfixUser) = bot.sendMessage(user, "Welcome back!").fold(
-        ifLeft = { CommandFailure(user, "Failed to send welcome back message.") },
-        ifRight = { CommandSuccess(user, "Welcome back message sent successfully.") }
-    )
+    context(StickfixBot)
+    private fun sendWelcomeBackMessage(user: StickfixUser): CommandResult {
+        logInfo(logger) { "User is already registered, sending welcome back message." }
+        return sendMessage(user, "Welcome back!").fold(
+            ifLeft = { CommandFailure(user, "Failed to send welcome back message.") },
+            ifRight = { CommandSuccess(user, "Welcome back message sent successfully.") }
+        )
+    }
 
     /**
      * Sends a registration prompt to a new user.
@@ -87,20 +100,19 @@ data class StartCommand(
      * @param user The `StickfixUser` instance representing the user.
      * @return `CommandResult` indicating the success or failure of sending the registration prompt.
      */
+    context(StickfixBot)
     private fun sendRegistrationPrompt(user: StickfixUser): CommandResult {
         val inlineKeyboardMarkup = inlineKeyboardMarkup()
-        with(bot) {
-            return bot.sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
-                ifLeft = {
-                    user.onIdle()
-                    CommandFailure(user, "Failed to send registration prompt.")
-                },
-                ifRight = {
-                    user.onStart()
-                    CommandSuccess(user, "Registration prompt sent.")
-                }
-            )
-        }
+        return sendMessage(user, welcomeMessage, inlineKeyboardMarkup).fold(
+            ifLeft = {
+                user.onIdle()
+                CommandFailure(user, "Failed to send registration prompt.")
+            },
+            ifRight = {
+                user.onStart()
+                CommandSuccess(user, "Registration prompt sent.")
+            }
+        )
     }
 
     /**
@@ -113,12 +125,5 @@ data class StartCommand(
         val noButton = InlineKeyboardButton.CallbackData("No", StartConfirmationNo.name)
         val row = listOf(yesButton, noButton)
         return InlineKeyboardMarkup.createSingleRowKeyboard(row)
-    }
-
-    companion object {
-        /**
-         * The name of the command, used for identifying and registering the command in the bot.
-         */
-        const val NAME = "start"
     }
 }

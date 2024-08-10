@@ -17,11 +17,11 @@ import com.github.kotlintelegrambot.entities.User as TelegramUser
  *
  * @property username The username of the user, used primarily for identification and interaction purposes within the
  *   bot.
- * @property userId The unique identifier for the user, typically linked to their Telegram account.
+ * @property id The unique identifier for the user, typically linked to their Telegram account.
  */
 data class StickfixUser(
     val username: String,
-    val userId: Long,
+    val id: Long,
 ) {
     /**
      * The state of the user within the StickFix bot. This property manages the current condition or phase
@@ -35,12 +35,11 @@ data class StickfixUser(
      *
      * @return String The debug information for the user.
      */
-    val debugInfo: String get() = username.ifBlank { userId.toString() }
+    val debugInfo: String get() = username.ifBlank { id.toString() }
 
     /**
      * Handles the start of an interaction for the user, delegating the action to the current state.
      *
-     * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the transition attempt, indicating success or failure.
      */
     context(StickfixBot)
@@ -62,16 +61,15 @@ data class StickfixUser(
     /**
      * Handles the revocation process for the user, updating the user's state in the database.
      *
-     * @param bot The `StickfixBot` instance representing the bot that processes the interaction.
      * @return TransitionResult The result of the revocation process, indicating success or failure.
      */
-    fun onRevoke(bot: StickfixBot) = state.onRevoke(bot)
+    context(StickfixBot)
+    fun onRevoke() = state.onRevoke()
 
     /**
      * Handles the rejection of an action within the current state by delegating the call to the state's `onRejection`
      * method. This function ensures that the rejection logic defined in the current state is executed.
      *
-     * @param bot The `StickfixBot` instance used to interact with the bot's functionalities.
      * @return `TransitionResult` indicating the result of the rejection handling, as determined by the current state's
      *   `onRejection` method.
      */
@@ -88,6 +86,7 @@ data class StickfixUser(
     context(StickfixBot)
     fun onStartConfirmation(): TransitionResult = state.onStartConfirmation()
 
+    override fun toString() = "StickfixUser(username='$username', id=$id, state=${state::class.simpleName})"
 
     companion object {
         /**

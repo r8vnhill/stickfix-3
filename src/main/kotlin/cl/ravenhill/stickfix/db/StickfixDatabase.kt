@@ -7,21 +7,15 @@ package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
 import cl.ravenhill.jakt.constrainedTo
-import cl.ravenhill.jakt.constraints.BeNull
 import cl.ravenhill.stickfix.HaveSize
 import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
 import cl.ravenhill.stickfix.db.schema.Users
-import cl.ravenhill.stickfix.logInfo
-import cl.ravenhill.stickfix.states.IdleState
-import cl.ravenhill.stickfix.states.State
-import cl.ravenhill.stickfix.states.resolveState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
@@ -33,7 +27,7 @@ import org.slf4j.LoggerFactory
  * @property jdbcUrl The JDBC URL for connecting to the database.
  * @property driverName The name of the database driver.
  */
-class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) {
+class StickfixDatabase(private val jdbcUrl: String, private val driverName: String) : DatabaseService {
 
     private val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
@@ -41,7 +35,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * The database instance used for performing database operations. This property is initialized during the `init`
      * method call.
      */
-    lateinit var database: Database
+    override lateinit var database: Database
         private set
 
     /**
@@ -79,55 +73,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      * @return The result of the query operation, indicating success or failure, along with the retrieved user data.
      */
     fun getUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
-        getUser(user.userId)
-
-    /**
-     * Retrieves user information based on the given user ID.
-     *
-     * @param userId The ID of the user to be retrieved.
-     * @return The result of the query operation, indicating success or failure, along with the retrieved user data.
-     */
-    fun getUser(userId: Long): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
-        executeDatabaseOperationSafely(database) {
-            Users.selectAll().where { Users.id eq userId }.constrainedTo { query ->
-                "User must be present in the database" { query must HaveSize { it > 0 } }
-            }.single().constrainedTo {
-                "User must have an ID" { it.getOrNull(Users.id) mustNot BeNull }
-                "User must have a username" { it.getOrNull(Users.username) mustNot BeNull }
-                "User must have a state" { it.getOrNull(Users.state) mustNot BeNull }
-            }.let { row ->
-                StickfixUser(row[Users.username], row[Users.chatId]).apply {
-                    state = resolveState(row[Users.state], this)
-                }
-            }
-        }
-
-    /**
-     * Adds a new user to the database.
-     *
-     * @param user The `StickfixUser` instance representing the new user.
-     * @return The result of the add operation, indicating success or failure, along with the added user data.
-     */
-    fun addUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
-        executeDatabaseOperationSafely(database) {
-            Users.insert {
-                it[chatId] = user.userId
-                it[username] = user.username
-                it[state] = IdleState::class.simpleName!!
-            }
-            StickfixUser(user.username, user.userId)
-        }
-
-    /**
-     * Deletes a user from the database based on the given `StickfixUser` instance.
-     *
-     * @param user The `StickfixUser` instance representing the user to be deleted.
-     */
-    fun deleteUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
-        executeDatabaseOperationSafely(database) {
-            Users.deleteWhere { id eq user.userId }
-            user
-        }
+        getUser(user.id)
 
     /**
      * Sets the private mode for a user in the database.
@@ -138,7 +84,7 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
      *   setting.
      */
     fun setPrivateMode(user: StickfixUser, mode: PrivateMode) = executeDatabaseOperationSafely(database) {
-        Users.update({ Users.id eq user.userId }) {
+        Users.update({ Users.id eq user.id }) {
             it[privateMode] = when (mode) {
                 PrivateMode.ENABLED -> true
                 PrivateMode.DISABLED -> false
@@ -146,27 +92,6 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
         mode
     }
-
-
-    /**
-     * Sets the state of a user in the database. This function updates the user's state both in-memory and in the
-     * database, ensuring that the user's state is consistently managed.
-     *
-     * @param state The new state to set for the user. This state is represented as an instance of the `State`
-     *   interface.
-     * @return `DatabaseOperationResult` indicating the success or failure of the operation. On success, it returns a
-     *   `DatabaseOperationSuccess` with the updated state. On failure, it returns a `DatabaseOperationFailure`with the
-     *   appropriate error message and exception.
-     */
-    fun setUserState(state: State): Either<DatabaseOperationFailure, DatabaseOperationSuccess<Int>> =
-        executeDatabaseOperationSafely(database) {
-            val user = state.user
-            logInfo(logger) { "Setting user ${user.userId} state to ${state::class.simpleName}" }
-            user.state = state
-            Users.update({ Users.id eq user.userId }) {
-                it[this.state] = state::class.simpleName!!
-            }
-        }
 
     /**
      * Returns a string representation of the `StickfixDatabase` instance, including the JDBC URL and driver name.

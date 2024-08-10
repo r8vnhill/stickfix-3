@@ -20,14 +20,12 @@ private val logger = LoggerFactory.getLogger("bot.dispatch.Revoke")
 /**
  * Registers the revoke command within the given dispatcher context. This function handles the revocation process by
  * invoking the `RevokeCommand` and logging the results of the execution.
- *
- * @param bot The `StickfixBot` instance used to send messages to the user.
  */
-context(Dispatcher)
-internal fun registerRevokeCommand(bot: StickfixBot) {
+context(StickfixBot, Dispatcher)
+internal fun registerRevokeCommand() {
     command(RevokeCommand.NAME) {
         logInfo(logger) { "Received revoke command" }
-        when (val result = RevokeCommand(StickfixUser.from(message.from!!), bot).invoke()) {
+        when (val result = RevokeCommand(StickfixUser.from(message.from!!))) {
             is CommandSuccess -> logInfo(logger) { "Revoke command executed successfully: $result" }
             is CommandFailure -> logError(logger) { "Revoke command failed: $result" }
         }

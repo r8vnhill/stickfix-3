@@ -18,6 +18,7 @@ import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.StickfixDatabase
+import cl.ravenhill.stickfix.db.TempDatabase
 import cl.ravenhill.stickfix.exceptions.MessageSendingException
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
@@ -38,6 +39,14 @@ class StickfixBot(val databaseService: StickfixDatabase) {
      * Tracks whether the bot has been started.
      */
     private var started: Boolean = false
+
+    /**
+     * A `TempDatabase` instance used for managing temporary user data. This database is initialized immediately upon
+     * bot creation using the `init()` method, making it ready for use when handling temporary or transient user data.
+     */
+    val tempDatabase = TempDatabase().apply {
+        init()
+    }
 
     /**
      * A local instance of the bot initialized with the API token from the `DatabaseService`. Registers commands using
@@ -80,7 +89,7 @@ class StickfixBot(val databaseService: StickfixDatabase) {
         message: String,
         replyMarkup: ReplyMarkup? = null,
     ): Either<BotFailure<MessageSendingException>, BotSuccess<String>> =
-        _bot.sendMessage(ChatId.fromId(user.userId), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
+        _bot.sendMessage(ChatId.fromId(user.id), message, ParseMode.MARKDOWN, replyMarkup = replyMarkup).fold(
             ifSuccess = {
                 BotSuccess(message = "Message sent to user ${user.debugInfo}", data = message).right()
             },
@@ -97,8 +106,8 @@ context(StickfixBot, Bot.Builder)
 private fun registerCommands(bot: StickfixBot) {
     dispatch {
         // region : Command registration
-        registerStartCommand(bot)
-        registerRevokeCommand(bot)
+        registerStartCommand()
+        registerRevokeCommand()
         // endregion
         // region : Callback query registration
         registerStartConfirmationYes()

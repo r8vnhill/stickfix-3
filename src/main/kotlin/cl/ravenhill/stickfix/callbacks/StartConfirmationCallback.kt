@@ -5,30 +5,14 @@
 
 package cl.ravenhill.stickfix.callbacks
 
-import cl.ravenhill.stickfix.bot.BotResult
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.StartConfirmationNo.name
 import cl.ravenhill.stickfix.callbacks.StartConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.logDebug
-import cl.ravenhill.stickfix.states.TransitionResult
+import cl.ravenhill.stickfix.db.DatabaseOperationFailure
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.states.TransitionSuccess
-import org.slf4j.Logger
-
-/**
- * Generates a standardized error log message when there is a failure in sending messages to users.
- * This function formats the error message using user details and the error message from the bot result.
- *
- * @param user
- *  The user to whom the message sending failed. User details are utilized for logging purposes.
- * @param result
- *  The result of the bot operation, containing the error message.
- * @return
- *  A formatted string suitable for logging, which includes the user's identifier and the error
- *  message.
- */
-private fun errorSendingMessageLog(user: StickfixUser, result: BotResult<*>) =
-    "Failed to send message to ${user.debugInfo}: ${result.message}"
 
 /**
  * Represents a handler for processing start confirmation callback queries in the Stickfix bot application. This sealed
@@ -42,37 +26,6 @@ private fun errorSendingMessageLog(user: StickfixUser, result: BotResult<*>) =
 sealed class StartConfirmationCallback : CallbackQueryHandler() {
 
     /**
-     * Sends a message to the user via the bot and returns the appropriate `CallbackResult`. This method handles logging
-     * and error management, ensuring that any issues encountered during message sending are properly logged and
-     * reported.
-     *
-     * @param bot The `StickfixBot` instance used to send messages to the user.
-     * @param user The `StickfixUser` instance representing the recipient of the message.
-     * @param message The text of the message to send to the user.
-     * @return CallbackResult The result of the message sending operation, indicating success or failure along with any
-     *   relevant messages.
-     */
-    protected fun sendMessage(bot: StickfixBot, user: StickfixUser, message: String) =
-        bot.sendMessage(user, message).fold(
-            ifLeft = { error ->
-                logger.error(errorSendingMessageLog(user, error))
-                CallbackFailure(error.message)
-            },
-            ifRight = { CallbackSuccess(message) },
-        )
-}
-
-/**
- * Handles the affirmative response to a start confirmation query in the Stickfix bot application. This object extends
- * `StartConfirmationCallback`, applying specific logic for users who confirm a start action. It checks if the user is
- * already registered and either registers them or notifies them of their current status.
- *
- * @property name The simple name of the class, used for logging and reference within the system.
- */
-data object StartConfirmationYes : StartConfirmationCallback() {
-    override val name = this::class.simpleName!!
-
-    /**
      * Handles the logic when a user confirms the intention to start or register. It checks the user's registration
      * status and responds appropriately by either registering the user or notifying them that they are already
      * registered.
@@ -83,12 +36,121 @@ data object StartConfirmationYes : StartConfirmationCallback() {
      *   was already registered, with appropriate messages delivered via the bot.
      */
     context(StickfixBot)
-    override fun invoke(user: StickfixUser): CallbackResult = handleTransition(
-        user,
-        logger,
-        "User ${user.debugInfo} registered successfully.",
-        "Failed to transition user ${user.debugInfo} to",
-    ) { onStartConfirmation() }
+    override fun invoke(user: StickfixUser): CallbackResult = databaseService.getUser(user.id).fold(
+        ifLeft = { handleUserNotRegistered(user) },
+        ifRight = { CallbackFailure(alreadyRegisteredMessage(user)) }
+    )
+
+    /**
+     * Handles the scenario where a user is not registered in the main database. This function logs an informational
+     * message indicating that the user is not registered and proceeds to retrieve the user data from the temporary
+     * database for further processing.
+     *
+     * @param user The `StickfixUser` instance representing the user that is not registered in the main database.
+     * @return A `CallbackResult` that indicates the outcome of the process, which includes either successfully
+     *   retrieving the user from the temporary database or handling any errors that occur during the process.
+     */
+    context(StickfixBot)
+    protected abstract fun handleUserNotRegistered(user: StickfixUser): CallbackResult
+
+    /**
+     * Retrieves a user from the temporary database. This function attempts to find the user in the temporary database
+     * and handles the result accordingly. If the user is found, it processes the user data; if not, it handles the
+     * failure.
+     *
+     * @param user The `StickfixUser` instance representing the user to be retrieved from the temporary database.
+     * @return A `CallbackResult` indicating the outcome of the retrieval process, which could either be successful
+     *   processing of the user data or handling a failure to retrieve the user.
+     */
+    context(StickfixBot)
+    protected fun retrieveTempUser(user: StickfixUser): CallbackResult = tempDatabase.getUser(user.id).fold(
+        ifLeft = { handleTempUserRetrievalFailure(it) },
+        ifRight = { handleTempUserRetrievalSuccess(user, it.data) }
+    )
+
+    /**
+     * Handles the failure to retrieve a user from the temporary database. This function logs the error and returns a
+     * `CallbackFailure` result with the error message.
+     *
+     * @param error The `DatabaseOperationFailure` instance representing the failure that occurred during the retrieval
+     *   attempt.
+     * @return A `CallbackFailure` result containing the error message.
+     */
+    private fun handleTempUserRetrievalFailure(error: DatabaseOperationFailure): CallbackResult {
+        logError(logger) { "Failed to retrieve user data from temporary database: $error" }
+        return CallbackFailure(error.toString())
+    }
+
+    /**
+     * Handles the successful retrieval of a user from the temporary database. This function processes the user data and
+     * returns the appropriate `CallbackResult`.
+     *
+     * @param user The `StickfixUser` instance representing the current user.
+     * @param tempUser The `StickfixUser` instance retrieved from the temporary database.
+     * @return A `CallbackResult` indicating the success or failure of the user's retrieval from the temporary database.
+     */
+    context(StickfixBot)
+    protected abstract fun handleTempUserRetrievalSuccess(user: StickfixUser, tempUser: StickfixUser): CallbackResult
+}
+
+/**
+ * Handles the affirmative response to a start confirmation query in the Stickfix bot application. This object extends
+ * `StartConfirmationCallback`, applying specific logic for users who confirm a start action. It checks if the user is
+ * already registered and either registers them or notifies them of their current status.
+ *
+ * @property name The simple name of the class, used for logging and reference within the system.
+ */
+data object StartConfirmationYes : StartConfirmationCallback() {
+
+    override val name = this::class.simpleName!!
+
+    /**
+     * Handles the scenario where a user is not registered in the main database. This function logs an informational
+     * message indicating that the user is not registered and proceeds to retrieve the user data from the temporary
+     * database for further processing.
+     *
+     * @param user The `StickfixUser` instance representing the user that is not registered in the main database.
+     * @return A `CallbackResult` that indicates the outcome of the process, which includes either successfully
+     *   retrieving the user from the temporary database or handling any errors that occur during the process.
+     */
+    context(StickfixBot)
+    override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
+        logInfo(logger) { "User ${user.debugInfo} is not registered. Registering..." }
+        return retrieveTempUser(user)
+    }
+
+    /**
+     * Handles the successful retrieval of a user from the temporary database. This function attempts to confirm the
+     * start process for the temporary user and returns the appropriate `CallbackResult`.
+     *
+     * @param user The `StickfixUser` instance representing the current user.
+     * @param tempUser The `StickfixUser` instance retrieved from the temporary database.
+     * @return A `CallbackResult` indicating the success or failure of the user's transition to a confirmed state.
+     */
+    context(StickfixBot)
+    override fun handleTempUserRetrievalSuccess(user: StickfixUser, tempUser: StickfixUser): CallbackResult =
+        when (val result = tempUser.onStartConfirmation()) {
+            is TransitionSuccess -> sendWelcomeMessage(user, result)
+            else -> CallbackFailure(result.toString())
+        }
+
+    /**
+     * Sends a welcome message to the user after a successful transition to a confirmed state. This function attempts to
+     * send a predefined welcome message to the user and returns the appropriate `CallbackResult` based on the success
+     * or failure of the message sending operation.
+     *
+     * @param user The `StickfixUser` instance representing the recipient of the welcome message.
+     * @param result The `TransitionSuccess` result indicating that the user's transition was successful.
+     * @return A `CallbackResult` indicating whether the welcome message was sent successfully or if there was a
+     *   failure.
+     */
+    context(StickfixBot)
+    private fun sendWelcomeMessage(user: StickfixUser, result: TransitionSuccess): CallbackResult {
+        return sendMessage(user, WELCOME_MESSAGE).fold(
+            ifLeft = { CallbackFailure(it.toString()) },
+            ifRight = { CallbackSuccess(result.toString()) }
+        )
+    }
 }
 
 /**
@@ -99,54 +161,61 @@ data object StartConfirmationYes : StartConfirmationCallback() {
  * @property name The simple name of the class, used for logging and reference within the system.
  */
 data object StartConfirmationNo : StartConfirmationCallback() {
-    override val name = this::class.simpleName!!
+    override val name: String = this::class.simpleName!!
 
     /**
-     * Handles the logic when a user declines the intention to start or register. It sends a message confirming the
-     * user's choice and logs the action.
+     * Handles the successful retrieval of a temporary user's data when the user chooses not to register. This function
+     * processes the user's rejection of the start command and sends a message confirming their decision.
      *
-     * @param user A `StickfixUser` instance representing the user interacting with the bot.
-     * @receiver bot A `StickfixBot` instance used to send messages back to the user.
-     * @return CallbackResult The result of the operation, indicating the user's choice not to register, with
-     *   appropriate messages delivered via the bot.
+     * @param user The `StickfixUser` instance representing the user.
+     * @param tempUser The temporary user data retrieved from the database.
+     * @return `CallbackResult` indicating the outcome of the rejection handling process.
      */
     context(StickfixBot)
-    override fun invoke(user: StickfixUser): CallbackResult =
-        handleTransition(
-            user,
-            logger,
-            "User ${user.debugInfo} chose not to register.",
-            "Failed to transition user ${user.debugInfo} to",
-        ) { onStartRejection() }
+    override fun handleTempUserRetrievalSuccess(user: StickfixUser, tempUser: StickfixUser): CallbackResult =
+        when (val result = tempUser.onStartRejection()) {
+            is TransitionSuccess -> sendRegisterLaterMessage(user, result)
+            else -> CallbackFailure(result.toString())
+        }
+
+    /**
+     * Handles the case when a user who is not registered chooses not to register. This function logs the action and
+     * skips the registration process.
+     *
+     * @param user The `StickfixUser` instance representing the user.
+     * @return `CallbackResult` indicating the outcome of the user's decision not to register.
+     */
+    context(StickfixBot)
+    override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
+        logInfo(logger) { "User ${user.debugInfo} is not registered. Skipping registration." }
+        return retrieveTempUser(user)
+    }
+
+    /**
+     * Sends a message to the user confirming their decision not to register and logs the successful transition.
+     *
+     * @param user The `StickfixUser` instance representing the user.
+     * @param result The `TransitionSuccess` result indicating that the user's transition to a rejection state was
+     *   successful.
+     * @return `CallbackResult` indicating whether the message was sent successfully or if there was a failure.
+     */
+    context(StickfixBot)
+    private fun sendRegisterLaterMessage(user: StickfixUser, result: TransitionSuccess): CallbackResult =
+        sendMessage(user, "You have chosen not to register. Remember you can always register later!").fold(
+            ifLeft = { CallbackFailure(it.toString()) },
+            ifRight = { CallbackSuccess(result.toString()) }
+        )
 }
 
 /**
- * Handles the transition logic for a user's state change, logging the result and returning the appropriate
- * `CallbackResult`.
- *
- * @param user The user whose state is being transitioned.
- * @param transitionFunction The function to invoke the specific transition (`onStartConfirmation` or
- * `onStartRejection`).
- * @param successMessage The message to log and return on successful transition.
- * @param failureMessage The message to log and return on failed transition.
- * @receiver The `StickfixBot` instance used to send messages and manage the database service.
- * @return The result of the transition, wrapped in a `CallbackResult`.
+ * A constant string that serves as the welcome message for new users when they register with the Stickfix bot.
  */
-context(StickfixBot)
-private fun handleTransition(
-    user: StickfixUser,
-    logger: Logger,
-    successMessage: String,
-    failureMessage: String,
-    transitionFunction: StickfixUser.() -> TransitionResult,
-): CallbackResult {
-    val transitionResult = user.transitionFunction().nextState.onIdle()
-    logDebug(logger, transitionResult::toString)
-    return when (transitionResult) {
-        is TransitionSuccess -> CallbackSuccess(
-            "$successMessage Transitioned to ${transitionResult.nextState}"
-        )
+private const val WELCOME_MESSAGE = "Welcome to Stickfix!"
 
-        else -> CallbackFailure("$failureMessage ${transitionResult.nextState}")
-    }
-}
+/**
+ * Generates a message indicating that the user is already registered with the Stickfix bot.
+ *
+ * @param user The user for whom the message is being generated.
+ * @return A string message stating that the user is already registered.
+ */
+private fun alreadyRegisteredMessage(user: StickfixUser) = "User ${user.debugInfo} is already registered."

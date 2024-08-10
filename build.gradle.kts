@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.kotlin.datetime)
     implementation(libs.kotlinx.date.time)
     implementation(libs.arrow.core)
     testImplementation(libs.kotest.assertions.core)
