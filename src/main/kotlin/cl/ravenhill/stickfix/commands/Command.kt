@@ -5,8 +5,6 @@
 
 package cl.ravenhill.stickfix.commands
 
-import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.chat.StickfixUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

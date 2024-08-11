@@ -1,11 +1,14 @@
-package cl.ravenhill.stickfix
+package cl.ravenhill.stickfix.utils
 
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.CommandFailure
 import cl.ravenhill.stickfix.commands.CommandResult
 import cl.ravenhill.stickfix.commands.CommandSuccess
+import cl.ravenhill.stickfix.logError
+import cl.ravenhill.stickfix.logInfo
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
+import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.entities.ReplyMarkup
 import org.slf4j.Logger
@@ -122,4 +125,31 @@ internal fun handleUserAction(
             CommandSuccess(user, "$actionDescription command sent successfully")
         }
     )
+}
+
+/**
+ * Registers a callback query handler in the Stickfix bot, associating the specified callback name with a given action.
+ * This function handles the common logic for logging the receipt of a callback query and retrieving the user data from
+ * the database. If the user is successfully retrieved, the provided action is executed with the user data.
+ *
+ * @param callbackName The name of the callback to be registered, typically matching the `name` property of a
+ *   `CallbackQueryHandler`.
+ * @param logger The logger instance used to log actions and errors related to the callback handling process.
+ * @param callbackAction A lambda function that defines the action to be executed when the callback is triggered and the
+ *   user data is successfully retrieved from the database. This action receives the `StickfixUser` instance as its
+ *   parameter.
+ */
+context(StickfixBot, Dispatcher)
+internal inline fun registerCallback(
+    callbackName: String,
+    logger: Logger,
+    crossinline callbackAction: (StickfixUser) -> Unit
+) {
+    callbackQuery(callbackName) {
+        logInfo(logger) { "Received $callbackName callback" }
+        databaseService.getUser(callbackQuery.from.id).fold(
+            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
+            ifRight = { callbackAction(it.data) }
+        )
+    }
 }

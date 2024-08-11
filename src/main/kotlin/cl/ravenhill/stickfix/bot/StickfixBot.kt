@@ -15,6 +15,9 @@ import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeEnabledCallback
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerRevokeConfirmationYes
+import cl.ravenhill.stickfix.bot.dispatch.registerShuffleCommand
+import cl.ravenhill.stickfix.bot.dispatch.registerShuffleDisabledCallback
+import cl.ravenhill.stickfix.bot.dispatch.registerShuffleEnabledCallback
 import cl.ravenhill.stickfix.bot.dispatch.registerStartCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationNo
 import cl.ravenhill.stickfix.bot.dispatch.registerStartConfirmationYes
@@ -113,6 +116,7 @@ private fun registerCommands() {
         registerRevokeCommand()
         registerPrivateModeCommand()
         registerHelpCommand()
+        registerShuffleCommand()
         // endregion
         // region : Callback query registration
         registerStartConfirmationYes()
@@ -121,6 +125,8 @@ private fun registerCommands() {
         registerRevokeConfirmationNo()
         registerPrivateModeEnabledCallback()
         registerPrivateModeDisabledCallback()
+        registerShuffleEnabledCallback()
+        registerShuffleDisabledCallback()
         // endregion
     }
 }

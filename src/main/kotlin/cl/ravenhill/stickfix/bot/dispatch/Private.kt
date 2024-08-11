@@ -6,7 +6,8 @@ import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback
 import cl.ravenhill.stickfix.commands.PrivateModeCommand
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
-import cl.ravenhill.stickfix.registerCommand
+import cl.ravenhill.stickfix.utils.registerCallback
+import cl.ravenhill.stickfix.utils.registerCommand
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import org.slf4j.LoggerFactory
@@ -40,14 +41,8 @@ internal fun registerPrivateModeCommand() {
  * of private mode by invoking the `PrivateModeEnabledCallback` and logging the results of the execution.
  */
 context(StickfixBot, Dispatcher)
-internal fun registerPrivateModeEnabledCallback() {
-    callbackQuery(PrivateModeEnabledCallback.name) {
-        logInfo(logger) { "Received private mode enabled callback" }
-        databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeEnabledCallback(it.data) }
-        )
-    }
+internal fun registerPrivateModeEnabledCallback() = registerCallback(PrivateModeEnabledCallback.name, logger) {
+    PrivateModeEnabledCallback(it)
 }
 
 /**
@@ -55,12 +50,6 @@ internal fun registerPrivateModeEnabledCallback() {
  * of private mode by invoking the `PrivateModeDisabledCallback` and logging the results of the execution.
  */
 context(StickfixBot, Dispatcher)
-internal fun registerPrivateModeDisabledCallback() {
-    callbackQuery(PrivateModeDisabledCallback.name) {
-        logInfo(logger) { "Received private mode disabled callback" }
-        databaseService.getUser(callbackQuery.from.id).fold(
-            ifLeft = { logError(logger) { "Failed to retrieve user: ${it.message}" } },
-            ifRight = { PrivateModeDisabledCallback(it.data) }
-        )
-    }
+internal fun registerPrivateModeDisabledCallback() = registerCallback(PrivateModeDisabledCallback.name, logger) {
+    PrivateModeDisabledCallback(it)
 }

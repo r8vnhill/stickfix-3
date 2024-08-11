@@ -5,11 +5,9 @@
 
 package cl.ravenhill.stickfix.states
 
-import cl.ravenhill.stickfix.PrivateMode
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
-import cl.ravenhill.stickfix.logInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -171,5 +169,46 @@ sealed class State {
         logTransitionFailure("enable private mode")
         return TransitionFailure(this)
     }
-}
 
+    /**
+     * Handles the shuffle action in the current state. This function logs a transition failure since shuffling is not
+     * supported in the current state. It then returns a `TransitionFailure` result, indicating that the shuffle
+     * operation was unsuccessful.
+
+     * @return `TransitionResult` representing the failure to transition to a state that supports shuffling. The result
+     *   is a `TransitionFailure` containing the current state.
+     */
+    context(StickfixBot)
+    open fun onShuffle(): TransitionResult {
+        logTransitionFailure("shuffle")
+        return TransitionFailure(this)
+    }
+
+    /**
+     * Handles the attempt to enable shuffle mode in the current state. This function logs a failure message and returns
+     * a `TransitionFailure` indicating that enabling shuffle mode is not allowed or supported in the current state.
+     *
+     * @return TransitionResult The result of the attempt to enable shuffle mode, always indicating failure in this
+     *   context.
+     */
+    context(StickfixBot)
+    open fun onShuffleEnabled(): TransitionResult {
+        logTransitionFailure("enable shuffle mode")
+        return TransitionFailure(this)
+    }
+
+    /**
+     * Handles the attempt to disable shuffle mode in the current state. This function logs a failure message and
+     * returns a `TransitionFailure` indicating that disabling shuffle mode is not allowed or supported in the current
+     * state.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
+     * @return TransitionResult The result of the attempt to disable shuffle mode, always indicating failure in this
+     *   context.
+     */
+    context(StickfixBot)
+    open fun onShuffleDisabled(): TransitionResult {
+        logTransitionFailure("disable shuffle mode")
+        return TransitionFailure(this)
+    }
+}

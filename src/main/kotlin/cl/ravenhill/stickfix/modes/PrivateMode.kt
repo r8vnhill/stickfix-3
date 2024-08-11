@@ -1,4 +1,4 @@
-package cl.ravenhill.stickfix
+package cl.ravenhill.stickfix.modes
 
 /**
  * Represents the private mode settings for a user in the Stickfix bot application.

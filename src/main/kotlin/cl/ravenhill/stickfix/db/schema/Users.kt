@@ -18,21 +18,30 @@ private const val MAX_USERNAME_LENGTH = 50
 private const val MAX_STATE_LENGTH = 50
 
 /**
- * Represents the `Users` table in the database. This table is used to store information about users, including their
- * chat ID, username, state, admin status, private mode status, and the time when the user record was created. Each user
- * is uniquely identified by their chat ID.
+ * Represents the `Users` table in the database, used to store information about users interacting with the Stickfix
+ * bot. This table includes various columns to capture the user's ID, username, state, and other settings related to
+ * their interactions with the bot.
  *
  * ## Columns:
- * - `chatId`: A long value representing the unique chat ID of the user. This column has a unique index.
- * - `username`: A varchar column with a maximum length of 50 characters, representing the user's username.
- * - `state`: A varchar column with a maximum length of 50 characters, representing the user's current state.
- * - `isAdmin`: A boolean column that indicates whether the user has admin privileges. Defaults to `false`.
- * - `privateMode`: A boolean column that indicates whether the user has enabled private mode. Defaults to `false`.
- * - `created`: A datetime column that stores the timestamp of when the user record was created. Defaults to the current
- *   system time.
+ * - `chatId`: A unique identifier for the user, corresponding to their chat ID in Telegram. This is used as the primary
+ *   key for the table.
+ * - `username`: A string representing the username of the user, with a maximum length defined by `MAX_USERNAME_LENGTH`.
+ * - `state`: A string representing the current state of the user within the bot's state machine, with a maximum length
+ *   defined by `MAX_STATE_LENGTH`.
+ * - `isAdmin`: A boolean flag indicating whether the user has administrative privileges. Defaults to `false`.
+ * - `privateMode`: A boolean flag indicating whether the user is in private mode, where all their stickers are private.
+ *   Defaults to `false`.
+ * - `created`: A timestamp indicating when the user was created in the database. Defaults to the current date and time
+ *   when the user is first added.
+ * - `shuffle`: A boolean flag indicating whether shuffle mode is enabled for the user. Defaults to `false`.
  *
  * ## Primary Key:
- * The primary key for this table is the `chatId` column, which is represented by the `id` property in the table object.
+ * - The primary key for this table is defined as `chatId`, which is a unique identifier for each user in the database.
+ *
+ * ## Usage:
+ * This table is used within the Stickfix bot application to track user data and manage interactions. It supports
+ * various operations such as querying user information, updating user states, and managing user-specific settings like
+ * private mode and shuffle mode.
  */
 object Users : IdTable<Long>() {
     // Column definitions
@@ -44,6 +53,7 @@ object Users : IdTable<Long>() {
     val created = datetime("created").default(
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     )
+    val shuffle = bool("shuffle").default(false)
 
     // Custom primary key definition
     override val id: Column<EntityID<Long>> = chatId.entityId()

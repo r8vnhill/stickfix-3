@@ -3,12 +3,11 @@ package cl.ravenhill.stickfix.commands
 import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.PrivateModeDisabledCallback
 import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback
-import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.PrivateModeCommand.description
 import cl.ravenhill.stickfix.commands.PrivateModeCommand.name
-import cl.ravenhill.stickfix.handleUserAction
-import cl.ravenhill.stickfix.handleUserNotRegistered
+import cl.ravenhill.stickfix.utils.handleUserAction
+import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 

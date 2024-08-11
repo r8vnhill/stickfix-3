@@ -63,6 +63,14 @@ data class StartState(override val user: StickfixUser) : State() {
             },
             ifRight = {
                 databaseService.setUserState(user, ::IdleState)
+                tempDatabase.deleteUser(user).fold(
+                    ifLeft = {
+                        logError(logger) { "Failed to delete user ${user.debugInfo}: $it" }
+                    },
+                    ifRight = {
+                        logInfo(logger) { "User ${user.debugInfo} deleted successfully." }
+                    }
+                )
                 TransitionSuccess(user.state)
             }
         )

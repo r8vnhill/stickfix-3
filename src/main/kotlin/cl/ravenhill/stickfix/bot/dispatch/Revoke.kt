@@ -6,15 +6,12 @@ import cl.ravenhill.stickfix.callbacks.CallbackSuccess
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.commands.CommandFailure
-import cl.ravenhill.stickfix.commands.CommandSuccess
 import cl.ravenhill.stickfix.commands.RevokeCommand
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
-import cl.ravenhill.stickfix.registerCommand
+import cl.ravenhill.stickfix.utils.registerCommand
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
-import com.github.kotlintelegrambot.dispatcher.command
 import org.slf4j.LoggerFactory
 
 

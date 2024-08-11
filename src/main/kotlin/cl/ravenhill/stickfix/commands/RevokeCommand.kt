@@ -4,10 +4,8 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
-import cl.ravenhill.stickfix.handleUserAction
-import cl.ravenhill.stickfix.handleUserNotRegistered
-import cl.ravenhill.stickfix.logError
-import cl.ravenhill.stickfix.logInfo
+import cl.ravenhill.stickfix.utils.handleUserAction
+import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 
