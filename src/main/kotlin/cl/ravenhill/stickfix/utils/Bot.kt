@@ -110,20 +110,20 @@ internal fun handleUserAction(
     logger: Logger,
     onSuccess: StickfixUser.() -> Unit
 ): CommandResult {
-    val (user, actionDescription, message, replyMarkup) = context
-    logInfo(logger) { "User ${user.debugInfo} $actionDescription" }
-    return sendMessage(chat = user, message = message, replyMarkup = replyMarkup).fold(
+    logInfo(logger) { "User ${context.user.debugInfo} ${context.actionDescription}" }
+    return sendMessage(chat = context.user, message = context.message, replyMarkup = context.replyMarkup).fold(
         ifLeft = { failure ->
-            logError(logger) { "Failed to send prompt to user ${user.debugInfo}: $failure" }
-            CommandFailure(user, "Failed to send message to user")
+            logError(logger) { "Failed to send prompt to user ${context.user.debugInfo}: $failure" }
+            CommandFailure(context.user, "Failed to send message to user")
         },
         ifRight = {
-            logInfo(logger) { "Sent prompt to user ${user.debugInfo}" }
-            user.onSuccess()
-            CommandSuccess(user, "$actionDescription command sent successfully")
+            logInfo(logger) { "Sent prompt to user ${context.user.debugInfo}" }
+            context.user.onSuccess()
+            CommandSuccess(context.user, "${context.actionDescription} command sent successfully")
         }
     )
 }
+
 
 /**
  * Registers a callback query handler in the Stickfix bot, associating the specified callback name with a given action.
