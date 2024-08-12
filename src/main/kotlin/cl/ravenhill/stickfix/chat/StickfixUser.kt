@@ -6,14 +6,15 @@
 package cl.ravenhill.stickfix.chat
 
 import cl.ravenhill.stickfix.bot.StickfixBot
+import cl.ravenhill.stickfix.chat.handlers.StartHandler
 import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.State
 import cl.ravenhill.stickfix.states.TransitionResult
 import com.github.kotlintelegrambot.entities.User as TelegramUser
 
 /**
- * Represents a user in the StickFix application, containing essential information and state
- * management for interactions with the Telegram bot.
+ * Represents a user in the StickFix application, containing essential information and state management for interactions
+ * with the Telegram bot.
  *
  * @property username The username of the user, used primarily for identification and interaction purposes within the
  *   bot.
@@ -22,12 +23,12 @@ import com.github.kotlintelegrambot.entities.User as TelegramUser
 data class StickfixUser(
     val username: String,
     override val id: Long,
-) : StickfixChat {
+) : StickfixChat, StartHandler {
     /**
      * The state of the user within the StickFix bot. This property manages the current condition or phase
      * of interaction the user is in, which can dictate the bot's responses and actions.
      */
-    var state: State = IdleState(this)
+    override var state: State = IdleState(this)
 
     /**
      * Provides a concise string representation of the user, useful for logging and debugging purposes. This property
@@ -36,14 +37,6 @@ data class StickfixUser(
      * @return String The debug information for the user.
      */
     override val debugInfo: String get() = if (username.isNotBlank()) "'$username'" else id.toString()
-
-    /**
-     * Handles the start of an interaction for the user, delegating the action to the current state.
-     *
-     * @return TransitionResult The result of the transition attempt, indicating success or failure.
-     */
-    context(StickfixBot)
-    fun onStart(): TransitionResult = state.onStart()
 
     /**
      * Transitions the user to the idle state by delegating the call to the current state's `onIdle` method. This
@@ -57,7 +50,6 @@ data class StickfixUser(
     context(StickfixBot)
     fun onIdle() = state.onIdle()
 
-
     /**
      * Handles the revocation process for the user, updating the user's state in the database.
      *
@@ -65,26 +57,6 @@ data class StickfixUser(
      */
     context(StickfixBot)
     fun onRevoke() = state.onRevoke()
-
-    /**
-     * Handles the rejection of an action within the current state by delegating the call to the state's `onRejection`
-     * method. This function ensures that the rejection logic defined in the current state is executed.
-     *
-     * @return `TransitionResult` indicating the result of the rejection handling, as determined by the current state's
-     *   `onRejection` method.
-     */
-    context(StickfixBot)
-    fun onStartRejection(): TransitionResult = state.onStartRejection()
-
-    /**
-     * Handles the confirmation of the start action for the current state of the user. This function delegates the
-     * handling of the start confirmation to the current state of the user.
-     *
-     * @receiver StickfixBot The bot instance used to interact with the Telegram API and database service.
-     * @return TransitionResult The result of the start confirmation transition, indicating success or failure.
-     */
-    context(StickfixBot)
-    fun onStartConfirmation(): TransitionResult = state.onStartConfirmation()
 
     /**
      * Facilitates the confirmation of a user's revoke action by delegating the process to the current state of the user.

@@ -1,11 +1,5 @@
 package cl.ravenhill.stickfix.db.schema
 
-import cl.ravenhill.stickfix.db.schema.Users.chatId
-import cl.ravenhill.stickfix.db.schema.Users.id
-import cl.ravenhill.stickfix.db.schema.Users.isAdmin
-import cl.ravenhill.stickfix.db.schema.Users.privateMode
-import cl.ravenhill.stickfix.db.schema.Users.state
-import cl.ravenhill.stickfix.db.schema.Users.username
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -57,4 +51,5 @@ object Users : IdTable<Long>() {
 
     // Custom primary key definition
     override val id: Column<EntityID<Long>> = chatId.entityId()
+    override val primaryKey = PrimaryKey(chatId, name = "PK_UsersChatId")
 }

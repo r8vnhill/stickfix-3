@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory
  * Represents a command in a Telegram bot. This sealed interface defines the essential structure for commands, ensuring
  * that each command has access to the user initiating the command and the bot processing it. Implementations of this
  * interface must define the logic for executing the command.
+ *
+ * @property name The name of the command, used to identify it within the bot.
+ * @property description A brief description of the command's purpose and functionality.
  */
-sealed class Command {
+sealed class Command(val name: String, val description: String) {
 
     /**
      * A logger instance for logging command-related actions. This logger is protected to allow subclasses to access it
@@ -21,14 +24,4 @@ sealed class Command {
      */
     protected val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
-
-    /**
-     * The name of the command, used for identifying and registering the command in the bot.
-     */
-    abstract val name: String
-
-    /**
-     * A brief description of the command, providing context and information about its purpose and functionality.
-     */
-    abstract val description: String
 }

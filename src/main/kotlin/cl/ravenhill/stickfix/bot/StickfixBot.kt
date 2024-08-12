@@ -29,6 +29,7 @@ import cl.ravenhill.stickfix.exceptions.MessageSendingException
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.ReplyMarkup
@@ -108,25 +109,54 @@ class StickfixBot(val databaseService: StickfixDatabase) {
         )
 }
 
+/**
+ * Registers all commands and callback queries for the Stickfix bot. This function organizes the registration process by
+ * dispatching command and callback registrations to separate functions, ensuring modular and maintainable code.
+ *
+ * @receiver StickfixBot The bot instance used to register commands and callbacks.
+ * @receiver Bot.Builder The bot builder instance used for configuring the bot's behavior.
+ */
 context(StickfixBot, Bot.Builder)
 private fun registerCommands() {
     dispatch {
-        // region : Command registration
-        registerStartCommand()
-        registerRevokeCommand()
-        registerPrivateModeCommand()
-        registerHelpCommand()
-        registerShuffleCommand()
-        // endregion
-        // region : Callback query registration
-        registerStartConfirmationYes()
-        registerStartConfirmationNo()
-        registerRevokeConfirmationYes()
-        registerRevokeConfirmationNo()
-        registerPrivateModeEnabledCallback()
-        registerPrivateModeDisabledCallback()
-        registerShuffleEnabledCallback()
-        registerShuffleDisabledCallback()
-        // endregion
+        registerAllCommands()
+        registerCallbacks()
     }
+}
+
+/**
+ * Registers all bot commands for the Stickfix bot. This function organizes the individual command registrations,
+ * enabling the bot to handle various commands such as start, revoke, private mode, help, and shuffle commands.
+ *
+ * @receiver StickfixBot The bot instance used to register commands.
+ * @receiver Dispatcher The dispatcher used for routing commands.
+ */
+context(StickfixBot, Dispatcher)
+private fun registerAllCommands() {
+    registerStartCommand()
+    registerRevokeCommand()
+    registerPrivateModeCommand()
+    registerHelpCommand()
+    registerShuffleCommand()
+    registerAddCommand()
+}
+
+/**
+ * Registers all callback queries for the Stickfix bot. This function organizes the individual callback query
+ * registrations, enabling the bot to handle various callback actions such as start confirmation, revocation, private
+ * mode, and shuffle mode callbacks.
+ *
+ * @receiver StickfixBot The bot instance used to register callback queries.
+ * @receiver Dispatcher The dispatcher used for routing callback queries.
+ */
+context(StickfixBot, Dispatcher)
+private fun registerCallbacks() {
+    registerStartConfirmationYes()
+    registerStartConfirmationNo()
+    registerRevokeConfirmationYes()
+    registerRevokeConfirmationNo()
+    registerPrivateModeEnabledCallback()
+    registerPrivateModeDisabledCallback()
+    registerShuffleEnabledCallback()
+    registerShuffleDisabledCallback()
 }

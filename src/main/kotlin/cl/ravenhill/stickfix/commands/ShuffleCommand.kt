@@ -1,11 +1,11 @@
 package cl.ravenhill.stickfix.commands
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.callbacks.PrivateModeDisabledCallback
-import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback
 import cl.ravenhill.stickfix.callbacks.ShuffleDisabledCallback
 import cl.ravenhill.stickfix.callbacks.ShuffleEnabledCallback
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.commands.ShuffleCommand.description
+import cl.ravenhill.stickfix.commands.ShuffleCommand.name
 import cl.ravenhill.stickfix.utils.handleUserAction
 import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup

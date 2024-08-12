@@ -69,14 +69,25 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
 
 /**
  * Handles the rejection of user revocation in the Stickfix bot application. This object extends
- * `RevokeConfirmationCallback`, applying specific logic for users who reject their revocation. It retains the user's
- * registration and sends a confirmation message.
+ * `RevokeConfirmationCallback`, applying specific logic for users who reject their revocation. When a user decides not
+ * to revoke their registration, this callback ensures that the user's registration is retained, sets their state to
+ * `IdleState`, and sends a confirmation message indicating that the revocation has been rejected.
  *
  * @property name The simple name of the class, used for logging and reference within the system.
  */
 data object RevokeConfirmationNo : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
-    context(StickfixBot) override fun handleUserRegistered(user: StickfixUser): CallbackResult =
+
+    /**
+     * Handles the case where a registered user rejects their revocation. It updates the user's state to `IdleState`,
+     * logs the action, and sends a message to confirm the rejection.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
+     * @param user The `StickfixUser` instance representing the user who rejected the revocation.
+     * @return CallbackResult The result of the revocation rejection process, indicating success or failure.
+     */
+    context(StickfixBot)
+    override fun handleUserRegistered(user: StickfixUser): CallbackResult =
         databaseService.setUserState(user, ::IdleState).fold(
             ifLeft = {
                 logError(logger) { "Failed to set user ${user.username} state to Idle: $it" }
@@ -84,12 +95,40 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
             },
             ifRight = {
                 logInfo(logger) { "User ${user.username} retained registration." }
-                CallbackSuccess("User retained registration.")
+                sendRevokeRejectedMessage(user)
             }
         )
 
-    context(StickfixBot) override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
+    /**
+     * Handles the case where a non-registered user attempts to reject revocation. Since the user is not registered,
+     * the action cannot be completed, and a failure result is returned.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
+     * @param user The `StickfixUser` instance representing the non-registered user.
+     * @return CallbackResult The result of the revocation rejection attempt, indicating failure due to the user not
+     *   being registered.
+     */
+    context(StickfixBot)
+    override fun handleUserNotRegistered(user: StickfixUser): CallbackResult {
         logError(logger) { "User ${user.username} is not registered. Cannot reject revocation." }
         return CallbackFailure("User is not registered.")
+    }
+
+    /**
+     * Sends a message to the user confirming that their revocation has been rejected and that they remain registered.
+     *
+     * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
+     * @param user The `StickfixUser` instance representing the user who rejected the revocation.
+     * @return CallbackResult The result of the message sending operation, indicating success or failure.
+     */
+    context(StickfixBot)
+    private fun sendRevokeRejectedMessage(user: StickfixUser): CallbackResult {
+        return sendMessage(
+            user,
+            "Revocation rejected. You are still registered."
+        ).fold(
+            ifLeft = { CallbackFailure("Failed to send revoke rejected message to user ${user.debugInfo}.") },
+            ifRight = { CallbackSuccess("Revocation rejected for user ${user.debugInfo}.") }
+        )
     }
 }
