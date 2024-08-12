@@ -9,5 +9,6 @@ import cl.ravenhill.stickfix.states.SealedState
  * @param name The detail message string explaining the reason for the exception.
  */
 class StateResolutionException(name: String) : Exception(
-    "State resolution failed for state: $name. Available states: ${SealedState::class.sealedSubclasses.map { it.simpleName }}"
+    "State resolution failed for state: $name. " +
+            "Available states: ${SealedState::class.sealedSubclasses.map { it.simpleName }}"
 )

@@ -86,15 +86,16 @@ interface DatabaseService {
     fun setUserState(
         user: StickfixUser,
         state: (StickfixUser) -> SealedState,
-    ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> = executeDatabaseOperationSafely(database) {
-        val newState = state(user)
-        logTrace(logger) { "Setting user $user.debugInfo state to ${newState::class.simpleName}" }
-        user.state = newState
-        Users.update({ Users.id eq user.id }) {
-            it[this.state] = newState::class.simpleName!!
+    ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> =
+        executeDatabaseOperationSafely(database) {
+            val newState = state(user)
+            logTrace(logger) { "Setting user $user.debugInfo state to ${newState::class.simpleName}" }
+            user.state = newState
+            Users.update({ Users.id eq user.id }) {
+                it[this.state] = newState::class.simpleName!!
+            }
+            newState
         }
-        newState
-    }
 
     /**
      * Deletes a user from the database based on the given `StickfixUser` instance.

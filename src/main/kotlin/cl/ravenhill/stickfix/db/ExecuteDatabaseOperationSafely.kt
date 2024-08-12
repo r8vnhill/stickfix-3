@@ -33,8 +33,6 @@ fun <T> executeDatabaseOperationSafely(
         handleDatabaseException(e).left()
     } catch (e: CompositeException) {
         handleDatabaseException(e).left()
-    } catch (e: Exception) {
-        handleDatabaseException(e).left()
     }
 }
 

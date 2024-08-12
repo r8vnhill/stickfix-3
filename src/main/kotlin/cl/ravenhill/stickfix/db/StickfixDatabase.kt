@@ -87,25 +87,27 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     // region : Setters for user data. These functions update the database with the provided user data. They are used to
     //         update the user's private mode and shuffle settings.
     /**
-     * Sets the private mode for a user in the `Users` table. This function uses the `updateBooleanField` method to update
-     * the `privateMode` field in the database based on the provided `PrivateMode` enum value.
+     * Sets the private mode for a user in the `Users` table. This function uses the `updateBooleanField` method to
+     * update the `privateMode` field in the database based on the provided `PrivateMode` enum value.
      *
      * @param user The `StickfixUser` instance representing the user whose private mode is to be updated.
      * @param mode The `PrivateMode` enum value indicating whether private mode should be enabled or disabled.
-     * @return Either a `DatabaseOperationFailure` indicating the failure of the operation, or a `DatabaseOperationSuccess`
-     *   indicating the success of the operation, along with the updated private mode setting.
+     * @return Either a `DatabaseOperationFailure` indicating the failure of the operation, or a
+     *   `DatabaseOperationSuccess` indicating the success of the operation, along with the updated private mode
+     *   setting.
      */
     fun setPrivateMode(user: StickfixUser, mode: PrivateMode) =
         updateBooleanField(user, Users.privateMode, mode == PrivateMode.ENABLED)
 
     /**
-     * Sets the shuffle mode for a user in the `Users` table. This function uses the `updateBooleanField` method to update
-     * the `shuffle` field in the database based on the provided `ShuffleMode` enum value.
+     * Sets the shuffle mode for a user in the `Users` table. This function uses the `updateBooleanField` method to
+     * update the `shuffle` field in the database based on the provided `ShuffleMode` enum value.
      *
      * @param user The `StickfixUser` instance representing the user whose shuffle mode is to be updated.
      * @param enabled The `ShuffleMode` enum value indicating whether shuffle mode should be enabled or disabled.
-     * @return Either a `DatabaseOperationFailure` indicating the failure of the operation, or a `DatabaseOperationSuccess`
-     *   indicating the success of the operation, along with the updated shuffle mode setting.
+     * @return Either a `DatabaseOperationFailure` indicating the failure of the operation, or a
+     *   `DatabaseOperationSuccess` indicating the success of the operation, along with the updated shuffle mode
+     *   setting.
      */
     fun setShuffle(user: StickfixUser, enabled: ShuffleMode) =
         updateBooleanField(user, Users.shuffle, enabled == ShuffleMode.ENABLED)

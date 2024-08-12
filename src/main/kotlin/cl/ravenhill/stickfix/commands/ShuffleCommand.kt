@@ -33,7 +33,8 @@ data object ShuffleCommand : UserChatCommand(
      *
      * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
      * @param user The `StickfixUser` instance representing the user who invoked the command.
-     * @return CommandResult The result of the command execution, indicating failure due to the user not being registered.
+     * @return CommandResult The result of the command execution, indicating failure due to the user not being
+     *   registered.
      */
     context(StickfixBot)
     override fun handleUserNotRegistered(user: StickfixUser): CommandResult =
@@ -50,7 +51,8 @@ data object ShuffleCommand : UserChatCommand(
      *
      * @receiver StickfixBot The bot instance used to interact with the Telegram API and the database service.
      * @param user The `StickfixUser` instance representing the user who invoked the command.
-     * @return CommandResult The result of the command execution, indicating success or failure of enabling shuffle mode.
+     * @return CommandResult The result of the command execution, indicating success or failure of enabling shuffle
+     *   mode.
      */
     context(StickfixBot)
     override fun handleUserRegistered(user: StickfixUser): CommandResult = handleUserAction(

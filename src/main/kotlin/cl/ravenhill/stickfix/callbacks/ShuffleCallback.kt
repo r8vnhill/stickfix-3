@@ -10,7 +10,8 @@ import cl.ravenhill.stickfix.states.TransitionSuccess
 
 /**
  * Represents the base class for handling shuffle-related callback queries in the Stickfix bot application. This sealed
- * class defines the structure for handling specific shuffle-related actions, such as enabling or disabling shuffle mode.
+ * class defines the structure for handling specific shuffle-related actions, such as enabling or disabling shuffle
+ * mode.
  */
 sealed class ShuffleCallback : CallbackQueryHandler()
 

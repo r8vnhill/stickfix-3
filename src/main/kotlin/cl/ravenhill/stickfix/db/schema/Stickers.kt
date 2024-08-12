@@ -6,6 +6,10 @@ import cl.ravenhill.stickfix.db.schema.Stickers.tag
 import cl.ravenhill.stickfix.db.schema.Stickers.userId
 import org.jetbrains.exposed.dao.id.IdTable
 
+private const val STICKER_ID_LENGTH = 50
+
+private const val TAG_LENGTH = 50
+
 /**
  * Represents the `Stickers` table in the Stickfix bot application database. This table is designed to store stickers
  * associated with specific users and categorized by tags. Each entry in the table links a sticker to a specific user
@@ -24,9 +28,9 @@ object Stickers : IdTable<String>() {
 
     val userId = reference("userId", Users)
 
-    val stickerId = varchar("stickerId", 50)
+    val stickerId = varchar("stickerId", STICKER_ID_LENGTH)
 
-    val tag = varchar("tag", 50)
+    val tag = varchar("tag", TAG_LENGTH)
 
     override val id = tag.entityId()
 }
