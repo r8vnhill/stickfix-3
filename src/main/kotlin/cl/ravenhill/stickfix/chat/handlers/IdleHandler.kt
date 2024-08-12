@@ -1,7 +1,7 @@
 package cl.ravenhill.stickfix.chat.handlers
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.states.State
+import cl.ravenhill.stickfix.states.SealedState
 
 /**
  * The `IdleHandler` interface defines a method for transitioning a user to the idle state within StickFix. This
@@ -11,7 +11,7 @@ import cl.ravenhill.stickfix.states.State
  * @property state The current `State` instance representing the user's state within the application.
  */
 interface IdleHandler {
-    val state: State
+    val state: SealedState
 
     /**
      * Transitions the user to the idle state by delegating the call to the current state's `onIdle` method. This

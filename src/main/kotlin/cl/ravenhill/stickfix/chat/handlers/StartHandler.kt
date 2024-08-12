@@ -1,7 +1,7 @@
 package cl.ravenhill.stickfix.chat.handlers
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.states.State
+import cl.ravenhill.stickfix.states.SealedState
 import cl.ravenhill.stickfix.states.TransitionResult
 
 /**
@@ -12,7 +12,7 @@ import cl.ravenhill.stickfix.states.TransitionResult
  * @property state The current `State` instance representing the user's state within the application.
  */
 interface StartHandler {
-    val state: State
+    val state: SealedState
 
     /**
      * Handles the start of an interaction for the user, delegating the action to the current state. This method ensures

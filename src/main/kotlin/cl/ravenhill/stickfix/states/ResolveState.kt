@@ -15,7 +15,7 @@ import cl.ravenhill.stickfix.exceptions.StateResolutionException
  * @return The resolved state instance that matches the provided name, constructed with the provided user.
  * @throws StateResolutionException If no matching state is found for the given name.
  */
-fun resolveState(name: String, user: StickfixUser) = State::class.sealedSubclasses
+fun resolveState(name: String, user: StickfixUser) = SealedState::class.sealedSubclasses
     .firstOrNull { klass ->
         klass.simpleName?.equals(name, ignoreCase = true) ?: false
     }

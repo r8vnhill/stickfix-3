@@ -1,9 +1,6 @@
 package cl.ravenhill.stickfix.states
 
 import cl.ravenhill.stickfix.bot.StickfixBot
-import cl.ravenhill.stickfix.callbacks.CallbackFailure
-import cl.ravenhill.stickfix.callbacks.CallbackSuccess
-import cl.ravenhill.stickfix.callbacks.StartConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
@@ -19,7 +16,9 @@ import org.slf4j.LoggerFactory
  * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class StartState(override val user: StickfixUser) : State() {
+data class StartState(override val user: StickfixUser) : SealedState(user) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Handles the rejection of the start action by the user. This function logs an informational message indicating

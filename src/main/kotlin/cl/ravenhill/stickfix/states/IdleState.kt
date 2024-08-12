@@ -9,6 +9,7 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logDebug
 import cl.ravenhill.stickfix.logError
+import org.slf4j.LoggerFactory
 
 /**
  * Represents the idle state for a user in the Stickfix bot application. This state indicates that the user is currently
@@ -18,7 +19,9 @@ import cl.ravenhill.stickfix.logError
  * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class IdleState(override val user: StickfixUser) : State() {
+data class IdleState(override val user: StickfixUser) : SealedState(user) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Handles the transition from idle state to start state when the user initiates a start action. Updates the user's
@@ -76,18 +79,16 @@ data class IdleState(override val user: StickfixUser) : State() {
      */
     context(StickfixBot)
     private fun transitionToNewState(
-        newState: (StickfixUser) -> State,
+        newState: (StickfixUser) -> SealedState,
         actionDescription: String,
-    ): TransitionResult {
-        return databaseService.setUserState(user, newState).fold(
-            ifLeft = {
-                logError(logger) { "Failed to update user state during $actionDescription: $it" }
-                TransitionFailure(this)
-            },
-            ifRight = {
-                logDebug(logger) { "User ${user.debugInfo} is $actionDescription" }
-                TransitionSuccess(it.data)
-            }
-        )
-    }
+    ): TransitionResult = databaseService.setUserState(user, newState).fold(
+        ifLeft = {
+            logError(logger) { "Failed to update user state during $actionDescription: $it" }
+            TransitionFailure(this)
+        },
+        ifRight = {
+            logDebug(logger) { "User ${user.debugInfo} is $actionDescription" }
+            TransitionSuccess(it.data)
+        }
+    )
 }

@@ -5,6 +5,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.modes.ShuffleMode
+import org.slf4j.LoggerFactory
 
 /**
  * Represents the shuffle state for a user in the Stickfix bot application. This state is responsible for handling the
@@ -13,7 +14,8 @@ import cl.ravenhill.stickfix.modes.ShuffleMode
  *
  * @property user The `StickfixUser` instance representing the user associated with this state.
  */
-class ShuffleState(override val user: StickfixUser) : State() {
+class ShuffleState(override val user: StickfixUser) : SealedState(user) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Handles the enabling of shuffle mode for the user. This method updates the user's shuffle mode in the database
@@ -24,12 +26,10 @@ class ShuffleState(override val user: StickfixUser) : State() {
      * @return TransitionResult The result of enabling shuffle mode, indicating success or failure.
      */
     context(StickfixBot)
-    override fun onShuffleEnabled(): TransitionResult {
-        return handleShuffleTransition(
-            mode = ShuffleMode.ENABLED,
-            successMessage = "User enabled shuffle mode."
-        )
-    }
+    override fun onShuffleEnabled(): TransitionResult = handleShuffleTransition(
+        mode = ShuffleMode.ENABLED,
+        successMessage = "User enabled shuffle mode."
+    )
 
     /**
      * Handles the disabling of shuffle mode for the user. This method updates the user's shuffle mode in the database
@@ -40,12 +40,10 @@ class ShuffleState(override val user: StickfixUser) : State() {
      * @return TransitionResult The result of disabling shuffle mode, indicating success or failure.
      */
     context(StickfixBot)
-    override fun onShuffleDisabled(): TransitionResult {
-        return handleShuffleTransition(
-            mode = ShuffleMode.DISABLED,
-            successMessage = "User disabled shuffle mode."
-        )
-    }
+    override fun onShuffleDisabled(): TransitionResult = handleShuffleTransition(
+        mode = ShuffleMode.DISABLED,
+        successMessage = "User disabled shuffle mode."
+    )
 
     /**
      * A helper method to handle the transition of shuffle mode (enabled or disabled) for the user. It updates the
@@ -59,17 +57,15 @@ class ShuffleState(override val user: StickfixUser) : State() {
     context(StickfixBot)
     private fun handleShuffleTransition(
         mode: ShuffleMode,
-        successMessage: String
-    ): TransitionResult {
-        return databaseService.setShuffle(user, mode).fold(
-            ifLeft = {
-                logError(logger) { "Failed to set shuffle mode for user: ${it.message}" }
-                TransitionFailure(this)
-            },
-            ifRight = {
-                logInfo(logger) { successMessage }
-                TransitionSuccess(user.state)
-            }
-        )
-    }
+        successMessage: String,
+    ): TransitionResult = databaseService.setShuffle(user, mode).fold(
+        ifLeft = {
+            logError(logger) { "Failed to set shuffle mode for user: ${it.message}" }
+            TransitionFailure(this)
+        },
+        ifRight = {
+            logInfo(logger) { successMessage }
+            TransitionSuccess(user.state)
+        }
+    )
 }

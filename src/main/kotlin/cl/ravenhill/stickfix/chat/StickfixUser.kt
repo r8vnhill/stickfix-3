@@ -5,15 +5,13 @@
 
 package cl.ravenhill.stickfix.chat
 
-import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.chat.handlers.IdleHandler
 import cl.ravenhill.stickfix.chat.handlers.PrivateModeHandler
 import cl.ravenhill.stickfix.chat.handlers.RevokationHandler
 import cl.ravenhill.stickfix.chat.handlers.ShuffleHandler
 import cl.ravenhill.stickfix.chat.handlers.StartHandler
 import cl.ravenhill.stickfix.states.IdleState
-import cl.ravenhill.stickfix.states.State
-import cl.ravenhill.stickfix.states.TransitionResult
+import cl.ravenhill.stickfix.states.SealedState
 import com.github.kotlintelegrambot.entities.User as TelegramUser
 
 data class StickfixUser(
@@ -24,7 +22,7 @@ data class StickfixUser(
      * The state of the user within the StickFix bot. This property manages the current condition or phase
      * of interaction the user is in, which can dictate the bot's responses and actions.
      */
-    override var state: State = IdleState(this)
+    override var state: SealedState = IdleState(this)
 
     /**
      * Provides a concise string representation of the user, useful for logging and debugging purposes. This property

@@ -8,7 +8,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.logTrace
 import cl.ravenhill.stickfix.states.IdleState
-import cl.ravenhill.stickfix.states.State
+import cl.ravenhill.stickfix.states.SealedState
 import cl.ravenhill.stickfix.states.resolveState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -85,8 +85,8 @@ interface DatabaseService {
      */
     fun setUserState(
         user: StickfixUser,
-        state: (StickfixUser) -> State,
-    ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<State>> = executeDatabaseOperationSafely(database) {
+        state: (StickfixUser) -> SealedState,
+    ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> = executeDatabaseOperationSafely(database) {
         val newState = state(user)
         logTrace(logger) { "Setting user $user.debugInfo state to ${newState::class.simpleName}" }
         user.state = newState

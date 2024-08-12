@@ -5,53 +5,31 @@
 
 package cl.ravenhill.stickfix.states
 
+import cl.ravenhill.stickfix.states.base.State
+
 /**
- * Defines a structure for the outcome of state transitions within an application. This interface
- * ensures that all state transition results, whether successful or not, provide information about
- * the next state to which the application will transition. This can be particularly useful in
- * systems that follow a state machine pattern, where actions lead to state changes based on success
- * or failure conditions.
+ * Represents the result of a state transition within StickFix. This sealed interface defines a common structure for all
+ * transition results, ensuring that each result includes the next state of the user, whether the transition was
+ * successful or not.
  *
- * ## Usage:
- * Implement this interface to encapsulate the result of a transition operation in state-driven
- * systems. The implementing class must specify the next state, which aids in determining the flow
- * of the application following the operation.
- *
- * ### Example 1: Implementing TransitionResult
- * ```kotlin
- * class SomeStateHandler {
- *     fun processTransition(currentState: State): TransitionResult {
- *         return if (currentState.canProceed()) {
- *             TransitionSuccess(nextState = State.FINISHED)
- *         } else {
- *             TransitionFailure(nextState = State.ERROR)
- *         }
- *     }
- * }
- * ```
- *
- * @property nextState
- *  The state to which the system will transition after the current operation. This could be the
- *  next logical state on success or a specific error state on failure.
+ * @property nextState The `State` instance representing the user's next state after the transition.
  */
 sealed interface TransitionResult {
     val nextState: State
 }
 
 /**
- * Represents a successful outcome of a state transition, indicating that the operation or action
- * leading to this result was successful and the system can move to the specified `nextState`.
+ * Represents a successful state transition. This data class is used when a transition from one state to another is
+ * successfully completed, encapsulating the next state of the user.
  *
- * @param nextState The state to which the system will transition after a successful operation.
+ * @property nextState The `State` instance representing the user's next state after the successful transition.
  */
 data class TransitionSuccess(override val nextState: State) : TransitionResult
 
 /**
- * Represents an unsuccessful outcome of a state transition, indicating that the operation or action
- * leading to this result encountered issues, thus transitioning the system to an error or alternative
- * state as specified by `nextState`.
+ * Represents a failed state transition. This data class is used when a transition from one state to another fails,
+ * encapsulating the state that the user remains in after the failed transition.
  *
- * @param nextState The state to which the system will transition after a failed operation, typically
- * an error or recovery state.
+ * @property nextState The `State` instance representing the user's state after the failed transition.
  */
 data class TransitionFailure(override val nextState: State) : TransitionResult

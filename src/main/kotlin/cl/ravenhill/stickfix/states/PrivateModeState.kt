@@ -5,6 +5,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.modes.PrivateMode
+import org.slf4j.LoggerFactory
 
 /**
  * Represents the state where a user can enable or disable private mode in the Stickfix bot application. This state
@@ -14,7 +15,9 @@ import cl.ravenhill.stickfix.modes.PrivateMode
  * @property user A `StickfixUser` instance representing the user information relevant to the state. This allows the
  *   state to have direct access to and modify user data as necessary during state transitions.
  */
-data class PrivateModeState(override val user: StickfixUser) : State() {
+data class PrivateModeState(override val user: StickfixUser) : SealedState(user) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Handles the transition to enable private mode for the user. This function uses the
@@ -63,7 +66,7 @@ data class PrivateModeState(override val user: StickfixUser) : State() {
     private fun handlePrivateModeTransition(
         mode: PrivateMode,
         successMessage: String,
-        failureMessage: String
+        failureMessage: String,
     ): TransitionResult {
         return databaseService.setPrivateMode(user, mode).fold(
             ifLeft = {

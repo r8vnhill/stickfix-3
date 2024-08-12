@@ -5,6 +5,8 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
 import cl.ravenhill.stickfix.modes.ShuffleMode
+import cl.ravenhill.stickfix.states.TransitionFailure
+import cl.ravenhill.stickfix.states.TransitionSuccess
 
 /**
  * Represents the base class for handling shuffle-related callback queries in the Stickfix bot application. This sealed
@@ -54,11 +56,19 @@ data object ShuffleEnabledCallback : ShuffleCallback() {
      */
     context(StickfixBot)
     private fun sendShuffleEnabledMessage(user: StickfixUser): CallbackResult {
-        val message = "Shuffle mode enabled. Your stickers will now be shuffled with each request."
-        return sendMessage(user, message).fold(
-            ifLeft = { CallbackFailure("Failed to send shuffle enabled message to user ${user.debugInfo}.") },
-            ifRight = { CallbackSuccess("Shuffle mode enabled for user ${user.debugInfo}.") }
-        )
+        when (val result = user.onShuffleEnabled()) {
+            is TransitionSuccess -> {
+                val message = "Shuffle mode enabled. Your stickers will now be shuffled with each request."
+                return sendMessage(user, message).fold(
+                    ifLeft = { CallbackFailure("Failed to send shuffle enabled message to user ${user.debugInfo}.") },
+                    ifRight = { CallbackSuccess("Shuffle mode enabled for user ${user.debugInfo}.") }
+                )
+            }
+            is TransitionFailure -> {
+                logError(logger) { "Failed to enable shuffle mode for user ${user.debugInfo}: $result" }
+                return CallbackFailure("Failed to enable shuffle mode for user ${user.debugInfo}.")
+            }
+        }
     }
 
     /**
@@ -97,16 +107,16 @@ data object ShuffleDisabledCallback : ShuffleCallback() {
      */
     context(StickfixBot)
     override fun handleUserRegistered(user: StickfixUser): CallbackResult {
-        return databaseService.setShuffle(user, ShuffleMode.DISABLED).fold(
-            ifLeft = {
-                logError(logger) { "Failed to disable shuffle mode for user ${user.debugInfo}: $it" }
-                CallbackFailure("Failed to disable shuffle mode for user ${user.debugInfo}.")
-            },
-            ifRight = {
+        return when (val result = user.onShuffleDisabled()) {
+            is TransitionSuccess -> {
                 logInfo(logger) { "User ${user.username} disabled shuffle mode." }
                 sendShuffleDisabledMessage(user)
             }
-        )
+            is TransitionFailure -> {
+                logError(logger) { "Failed to disable shuffle mode for user ${user.debugInfo}: $result" }
+                CallbackFailure("Failed to disable shuffle mode for user ${user.debugInfo}.")
+            }
+        }
     }
 
     /**
