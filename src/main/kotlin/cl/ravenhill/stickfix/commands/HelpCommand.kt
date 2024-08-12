@@ -47,10 +47,10 @@ private val helpMessage = buildString {
  * @property description A brief description of the command's functionality, specifically that it displays a list of
  *   available commands and their descriptions.
  */
-data object HelpCommand : Command() {
-    override val name = "help"
-
-    override val description = "Display the list of available commands and their descriptions."
+data object HelpCommand : Command(
+    name = "help",
+    description = "Display the list of available commands and their descriptions."
+) {
 
     /**
      * Sends the help message to a specified chat within the Stickfix bot application. This function is used to provide

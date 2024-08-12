@@ -4,6 +4,7 @@ import cl.ravenhill.stickfix.bot.StickfixBot
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationNo
 import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.utils.UserActionContext
 import cl.ravenhill.stickfix.utils.handleUserAction
 import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -13,11 +14,10 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
  * Represents a command to revoke a user's registration in the Stickfix bot. This command handles the logic for
  * confirming the user's intention to revoke their registration and updating the user's state accordingly.
  */
-data object RevokeCommand : UserChatCommand() {
-
-    override val name = "revoke"
-
-    override val description = "Revoke your registration in the Stickfix bot"
+data object RevokeCommand : UserChatCommand(
+    name = "revoke",
+    description = "Revoke your registration in the Stickfix bot"
+) {
 
     /**
      * Handles the scenario where a user attempts to revoke their registration but is not found in the database.
@@ -50,16 +50,16 @@ data object RevokeCommand : UserChatCommand() {
      *   error message.
      */
     context(StickfixBot)
-    override fun handleUserRegistered(user: StickfixUser): CommandResult {
-        return handleUserAction(
+    override fun handleUserRegistered(user: StickfixUser): CommandResult = handleUserAction(
+        UserActionContext(
             user = user,
             actionDescription = "is revoking registration",
             message = "Are you sure you want to revoke your registration?",
-            replyMarkup = inlineKeyboardMarkup(),
-            logger = logger
-        ) {
-            onRevoke()  // Additional action to take on success
-        }
+            replyMarkup = inlineKeyboardMarkup()
+        ),
+        logger = logger
+    ) {
+        onRevoke()  // Additional action to take on success
     }
 
     /**

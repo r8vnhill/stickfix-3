@@ -106,13 +106,11 @@ internal inline fun registerCommand(
  */
 context(StickfixBot)
 internal fun handleUserAction(
-    user: StickfixUser,
-    actionDescription: String,
-    message: String,
+    context: UserActionContext,
     logger: Logger,
-    replyMarkup: ReplyMarkup,
     onSuccess: StickfixUser.() -> Unit
 ): CommandResult {
+    val (user, actionDescription, message, replyMarkup) = context
     logInfo(logger) { "User ${user.debugInfo} $actionDescription" }
     return sendMessage(chat = user, message = message, replyMarkup = replyMarkup).fold(
         ifLeft = { failure ->
@@ -153,3 +151,24 @@ internal inline fun registerCallback(
         )
     }
 }
+
+/**
+ * Represents the context for a user action within StickFix. This data class encapsulates all necessary information
+ * related to a user action, allowing it to be passed around as a single object. It contains details about the user,
+ * the action being performed, the message to be sent to the user, and any associated reply markup.
+ *
+ * @property user The `StickfixUser` instance representing the user who is performing the action. This includes the
+ *   user's details necessary for processing the action.
+ * @property actionDescription A brief description of the action being performed by the user. This description is used
+ *   for logging and tracking the action within the system.
+ * @property message The message to be sent to the user. This string contains the content that will be delivered to
+ *   the user as part of the action's process.
+ * @property replyMarkup The reply markup associated with the message. This could be inline keyboard buttons or other
+ *   interactive elements that are sent along with the message to facilitate user interaction.
+ */
+internal data class UserActionContext(
+    val user: StickfixUser,
+    val actionDescription: String,
+    val message: String,
+    val replyMarkup: ReplyMarkup
+)

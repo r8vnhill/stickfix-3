@@ -6,6 +6,7 @@ import cl.ravenhill.stickfix.callbacks.ShuffleEnabledCallback
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.ShuffleCommand.description
 import cl.ravenhill.stickfix.commands.ShuffleCommand.name
+import cl.ravenhill.stickfix.utils.UserActionContext
 import cl.ravenhill.stickfix.utils.handleUserAction
 import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -20,11 +21,10 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
  * @property name The name of the command, used to invoke the shuffle mode command in the chat.
  * @property description A brief description of the command, explaining its purpose to users.
  */
-data object ShuffleCommand : UserChatCommand() {
-
-    override val name = "shuffle"
-
-    override val description = "Enables shuffling of stickers on each request."
+data object ShuffleCommand : UserChatCommand(
+    name = "shuffle",
+    description = "Enables shuffling of stickers on each request."
+) {
 
     /**
      * Handles the scenario where the user is not registered in the database. This method logs the failure, sends a
@@ -54,10 +54,12 @@ data object ShuffleCommand : UserChatCommand() {
      */
     context(StickfixBot)
     override fun handleUserRegistered(user: StickfixUser): CommandResult = handleUserAction(
-        user = user,
-        actionDescription = "enable shuffle mode",
-        message = "Do you want to enable shuffle mode?",
-        replyMarkup = inlineKeyboardMarkup(),
+        UserActionContext(
+            user = user,
+            actionDescription = "enable shuffle mode",
+            message = "Do you want to enable shuffle mode?",
+            replyMarkup = inlineKeyboardMarkup()
+        ),
         logger = logger
     ) {
         onShuffle()

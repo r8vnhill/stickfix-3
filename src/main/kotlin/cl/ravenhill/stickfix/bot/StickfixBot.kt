@@ -8,6 +8,7 @@ package cl.ravenhill.stickfix.bot
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import cl.ravenhill.stickfix.bot.dispatch.registerAddCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerHelpCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeCommand
 import cl.ravenhill.stickfix.bot.dispatch.registerPrivateModeDisabledCallback

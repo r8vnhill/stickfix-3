@@ -24,7 +24,7 @@ object Stickers : IdTable<String>() {
 
     val userId = reference("userId", Users)
 
-    val stickerId = long("stickerId")
+    val stickerId = varchar("stickerId", 50)
 
     val tag = varchar("tag", 50)
 

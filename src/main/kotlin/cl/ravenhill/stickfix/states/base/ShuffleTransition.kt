@@ -19,6 +19,7 @@ interface ShuffleTransition {
      * @return `TransitionResult` The result of the shuffle operation, which may indicate success or failure depending
      *   on the state.
      */
+    context(StickfixBot)
     fun onShuffle(): TransitionResult
 
     /**
@@ -28,6 +29,7 @@ interface ShuffleTransition {
      * @return `TransitionResult` The result of enabling shuffle mode, which may indicate success or failure depending
      *   on the state.
      */
+    context(StickfixBot)
     fun onShuffleEnabled(): TransitionResult
 
     /**
@@ -37,6 +39,7 @@ interface ShuffleTransition {
      * @return `TransitionResult` The result of disabling shuffle mode, which may indicate success or failure depending
      *   on the state.
      */
+    context(StickfixBot)
     fun onShuffleDisabled(): TransitionResult
 }
 

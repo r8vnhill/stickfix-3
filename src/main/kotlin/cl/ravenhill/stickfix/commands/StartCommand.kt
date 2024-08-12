@@ -33,11 +33,10 @@ private val welcomeMessage = """
  * Represents a command to start or register a user in the Stickfix bot. This command handles the logic for welcoming
  * back returning users or prompting new users to register.
  */
-data object StartCommand : UserChatCommand() {
-
-    override val name = "start"
-
-    override val description = "Starts the registration process for the user."
+data object StartCommand : UserChatCommand(
+    name = "start",
+    description = "Starts the registration process for the user."
+) {
 
     /**
      * Handles the scenario where a user is already registered in the Stickfix bot application. This function logs an

@@ -6,7 +6,6 @@ import cl.ravenhill.stickfix.callbacks.RevokeConfirmationYes.name
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.logError
 import cl.ravenhill.stickfix.logInfo
-import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.TransitionFailure
 import cl.ravenhill.stickfix.states.TransitionSuccess
 
@@ -88,16 +87,17 @@ data object RevokeConfirmationNo : RevokeConfirmationCallback() {
      */
     context(StickfixBot)
     override fun handleUserRegistered(user: StickfixUser): CallbackResult =
-        databaseService.setUserState(user, ::IdleState).fold(
-            ifLeft = {
-                logError(logger) { "Failed to set user ${user.username} state to Idle: $it" }
-                CallbackFailure("Failed to set user state.")
-            },
-            ifRight = {
-                logInfo(logger) { "User ${user.username} retained registration." }
+        when (val result = user.onRevokeRejection()) {
+            is TransitionFailure -> {
+                logError(logger) { "Failed to reject revocation for user ${user.debugInfo}: $result" }
+                CallbackFailure("Failed to reject revocation.")
+            }
+
+            is TransitionSuccess -> {
+                logInfo(logger) { "Revocation rejected for user ${user.debugInfo}." }
                 sendRevokeRejectedMessage(user)
             }
-        )
+        }
 
     /**
      * Handles the case where a non-registered user attempts to reject revocation. Since the user is not registered,

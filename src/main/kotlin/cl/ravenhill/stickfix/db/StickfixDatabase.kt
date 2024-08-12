@@ -8,14 +8,19 @@ package cl.ravenhill.stickfix.db
 import arrow.core.Either
 import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.stickfix.HaveSize
+import cl.ravenhill.stickfix.chat.ReplySticker
+import cl.ravenhill.stickfix.chat.StickfixChat
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
+import cl.ravenhill.stickfix.db.schema.Stickers
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.modes.PrivateMode
 import cl.ravenhill.stickfix.modes.ShuffleMode
+import cl.ravenhill.stickfix.states.IdleState
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 
@@ -45,7 +50,14 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
     fun init(): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixDatabase>> {
         database = Database.connect(jdbcUrl, driverName)
         return executeDatabaseOperationSafely(database) {
-            SchemaUtils.create(Meta, Users)
+            SchemaUtils.create(Meta, Users, Stickers)
+            Users.insert {
+                it[username] = "STICKFIX_PUBLIC"
+                it[id] = 0
+                it[privateMode] = false
+                it[shuffle] = false
+                it[state] = IdleState::class.simpleName!!
+            }
             this@StickfixDatabase
         }
     }
@@ -120,6 +132,23 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         value
     }
     // endregion
+
+    fun addSticker(
+        chat: StickfixChat,
+        sticker: ReplySticker,
+        tags: List<String>,
+    ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<Unit>> {
+        return executeDatabaseOperationSafely(database) {
+            for (tag in tags) {
+                // Add sticker to database
+                Stickers.insert {
+                    it[stickerId] = sticker.fileUniqueId
+                    it[userId] = 0
+                    it[Stickers.tag] = tag
+                }
+            }
+        }
+    }
 
     // region : Utility functions
     override fun toString() =

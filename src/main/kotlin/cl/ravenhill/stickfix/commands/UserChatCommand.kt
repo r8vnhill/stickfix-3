@@ -13,7 +13,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
  * implementation of abstract methods for each case. These commands typically interact with the bot's database
  * service to retrieve user data and perform necessary actions based on the user's status.
  */
-sealed class UserChatCommand : Command() {
+sealed class UserChatCommand(name: String, description: String) : Command(name, description) {
 
     /**
      * Invokes the command by determining whether the user is registered in the database. It retrieves the user's data

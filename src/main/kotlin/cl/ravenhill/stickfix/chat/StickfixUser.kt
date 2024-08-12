@@ -7,7 +7,7 @@ package cl.ravenhill.stickfix.chat
 
 import cl.ravenhill.stickfix.chat.handlers.IdleHandler
 import cl.ravenhill.stickfix.chat.handlers.PrivateModeHandler
-import cl.ravenhill.stickfix.chat.handlers.RevokationHandler
+import cl.ravenhill.stickfix.chat.handlers.RevocationHandler
 import cl.ravenhill.stickfix.chat.handlers.ShuffleHandler
 import cl.ravenhill.stickfix.chat.handlers.StartHandler
 import cl.ravenhill.stickfix.states.IdleState
@@ -17,7 +17,7 @@ import com.github.kotlintelegrambot.entities.User as TelegramUser
 data class StickfixUser(
     val username: String,
     override val id: Long,
-) : StickfixChat, StartHandler, IdleHandler, RevokationHandler, PrivateModeHandler, ShuffleHandler {
+) : StickfixChat, StartHandler, IdleHandler, RevocationHandler, PrivateModeHandler, ShuffleHandler {
     /**
      * The state of the user within the StickFix bot. This property manages the current condition or phase
      * of interaction the user is in, which can dictate the bot's responses and actions.

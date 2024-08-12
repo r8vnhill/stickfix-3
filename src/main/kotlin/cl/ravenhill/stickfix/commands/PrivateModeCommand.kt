@@ -6,6 +6,7 @@ import cl.ravenhill.stickfix.callbacks.PrivateModeEnabledCallback
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.commands.PrivateModeCommand.description
 import cl.ravenhill.stickfix.commands.PrivateModeCommand.name
+import cl.ravenhill.stickfix.utils.UserActionContext
 import cl.ravenhill.stickfix.utils.handleUserAction
 import cl.ravenhill.stickfix.utils.handleUserNotRegistered
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
@@ -21,13 +22,11 @@ import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
  * @property description A brief description of what the command does, informing users that private mode will make all
  *   added stickers private and only visible to them.
  */
-data object PrivateModeCommand : UserChatCommand() {
-    override val name = "private"
-
-    override val description =
-        "Enable or disable private mode for your account. In private mode, all stickers you add will be private and " +
-                "only you will be able to see them."
-
+data object PrivateModeCommand : UserChatCommand(
+    name = "private",
+    description = "Enable or disable private mode for your account. In private mode, all stickers you add will be " +
+            "private and only you will be able to see them."
+) {
     /**
      * Handles the scenario where the user is not registered in the database and cannot enable private mode. This method
      * uses a helper function to log the appropriate error message, send a failure message to the user, and return a
@@ -56,16 +55,16 @@ data object PrivateModeCommand : UserChatCommand() {
      * @return `CommandResult` indicating that private mode has been successfully enabled for the user.
      */
     context(StickfixBot)
-    override fun handleUserRegistered(user: StickfixUser): CommandResult {
-        return handleUserAction(
-            user = user,
+    override fun handleUserRegistered(user: StickfixUser): CommandResult = handleUserAction(
+        UserActionContext(
+            user =  user,
             actionDescription = "is setting private mode",
             message = "Do you want to enable private mode?",
             replyMarkup = inlineKeyboardMarkup(),
-            logger = logger
-        ) {
-            onPrivateMode()  // Additional action to take on success
-        }
+        ),
+        logger = logger
+    ) {
+        onPrivateMode()  // Additional action to take on success
     }
 
     /**

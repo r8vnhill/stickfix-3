@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  * @property name The name of the command, used to identify it within the bot.
  * @property description A brief description of the command's purpose and functionality.
  */
-sealed class Command(val name: String, val description: String) {
+sealed class Command(open val name: String, open val description: String) {
 
     /**
      * A logger instance for logging command-related actions. This logger is protected to allow subclasses to access it

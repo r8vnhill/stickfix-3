@@ -18,6 +18,7 @@ interface PrivateTransition {
      *
      * @return `TransitionResult` The result of the transition attempt, indicating success or failure.
      */
+    context(StickfixBot)
     fun onPrivateMode(): TransitionResult
 
     /**
@@ -26,6 +27,7 @@ interface PrivateTransition {
      *
      * @return `TransitionResult` The result of the transition to enable private mode, indicating success or failure.
      */
+    context(StickfixBot)
     fun onPrivateModeEnabled(): TransitionResult
 
     /**
@@ -34,6 +36,7 @@ interface PrivateTransition {
      *
      * @return `TransitionResult` The result of the transition to disable private mode, indicating success or failure.
      */
+    context(StickfixBot)
     fun onPrivateModeDisabled(): TransitionResult
 }
 

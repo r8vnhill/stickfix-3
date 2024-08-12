@@ -55,7 +55,6 @@ data class RevokeState(override val user: StickfixUser) : SealedState(user) {
      */
     context(StickfixBot) override fun onRevokeRejection(): TransitionResult {
         logInfo(logger) { "User ${user.debugInfo} rejected revocation." }
-        sendMessage(user, "Revocation process canceled.")
         databaseService.setUserState(user, ::IdleState)
         return TransitionSuccess(user.state)
     }
