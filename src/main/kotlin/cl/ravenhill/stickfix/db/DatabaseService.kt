@@ -1,6 +1,7 @@
 package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
+import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.jakt.constraints.BeNull
 import cl.ravenhill.stickfix.HaveSize
@@ -65,6 +66,11 @@ interface DatabaseService {
      */
     fun addUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
+            constraints {
+                "User must not be present in the database" {
+                    Users.selectAll().where { Users.id eq user.id } must HaveSize { it == 0L }
+                }
+            }
             Users.insert {
                 it[chatId] = user.id
                 it[username] = user.username
@@ -88,6 +94,11 @@ interface DatabaseService {
         state: (StickfixUser) -> SealedState,
     ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> =
         executeDatabaseOperationSafely(database) {
+            constraints {
+                "User must be present in the database" {
+                    Users.selectAll().where { Users.id eq user.id } must HaveSize { it > 0 }
+                }
+            }
             val newState = state(user)
             logTrace(logger) { "Setting user $user.debugInfo state to ${newState::class.simpleName}" }
             user.state = newState
