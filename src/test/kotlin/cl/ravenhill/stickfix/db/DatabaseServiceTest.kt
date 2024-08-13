@@ -25,6 +25,7 @@ import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -80,6 +81,10 @@ class DatabaseServiceTest : FreeSpec({
             "should succeed if the user exists" {
                 testDeletingExistingUser(database)
             }
+        }
+
+        "adding users should be symmetric to deleting users" {
+            testSymmetricAddDelete(database)
         }
     }
 }) {
@@ -270,8 +275,8 @@ class DatabaseServiceTest : FreeSpec({
         }
 
         /**
-         * Tests the deletion of a non-existent user from the database, asserting that the operation fails with the expected
-         * error message.
+         * Tests the deletion of a non-existent user from the database, asserting that the operation fails with the
+         * expected error message.
          *
          * @param database The database instance to use for the test.
          */
@@ -307,9 +312,38 @@ class DatabaseServiceTest : FreeSpec({
                 }
             }
         }
+
+        /**
+         * Tests the symmetric behavior of adding and then deleting users in the database. This function checks that
+         * after you add a list of users to the database and subsequently delete them, the database remains empty.
+         *
+         * The test follows these steps:
+         * 1. Generate a list of `StickfixUser` objects.
+         * 2. Add each user in the list to the database using `DatabaseServiceImpl`.
+         * 3. Delete each user in the list from the database.
+         * 4. After deleting all users, assert that the `Users` table is empty.
+         *
+         * This test ensures that the `addUser` and `deleteUser` operations function correctly and symmetrically,
+         * leaving the database in a clean state after performing these operations.
+         *
+         * @param database The database instance used to perform the operations.
+         */
+        context(FreeSpecContainerScope)
+        private suspend fun testSymmetricAddDelete(database: Database) {
+            checkAll(
+                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                Arb.list(Arb.long().map { StickfixUser("user$it", it) }, 1..10)
+            ) { users ->
+                val databaseService = DatabaseServiceImpl(database)
+                users.forEach(databaseService::addUser)
+                users.forEach(databaseService::deleteUser)
+                transaction(database) {
+                    Users.selectAll().count() shouldBe 0
+                }
+            }
+        }
     }
 }
-
 
 /**
  * Generates an arbitrary list of user IDs, inserts them into the database, and then generates a user ID that is not
