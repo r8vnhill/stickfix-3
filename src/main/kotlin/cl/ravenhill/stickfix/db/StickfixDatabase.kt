@@ -6,7 +6,9 @@
 package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
+import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constrainedTo
+import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.stickfix.HaveSize
 import cl.ravenhill.stickfix.chat.ReplySticker
 import cl.ravenhill.stickfix.chat.StickfixChat
@@ -130,6 +132,12 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         field: Column<Boolean>,
         value: Boolean,
     ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<Boolean>> = executeDatabaseOperationSafely(database) {
+        constraints {
+            "Cannot update default user's settings" { user.id mustNot BeEqualTo(0L) }
+            "User must exist in the database" {
+                Users.selectAll().where { Users.id eq user.id }.count() must BeEqualTo(1)
+            }
+        }
         Users.update({ Users.id eq user.id }) {
             it[field] = value
         }

@@ -3,6 +3,7 @@ package cl.ravenhill.stickfix.db
 import arrow.core.Either
 import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constraints.BeNull
+import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.stickfix.HaveSize
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
@@ -79,6 +80,9 @@ interface DatabaseService {
         state: (StickfixUser) -> SealedState,
     ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> =
         executeDatabaseOperationSafely(database) {
+            constraints {
+                "Cannot set user state of default user" { user.id mustNot BeEqualTo(0L) }
+            }
             checkUserExists(user.id)
             val newState = state(user)
             logUserStateChange(user, newState)

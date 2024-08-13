@@ -26,7 +26,7 @@ private const val TAG_LENGTH = 50
  */
 object Stickers : IdTable<String>() {
 
-    val userId = reference("userId", Users)
+    val userId = long("userId")
 
     val stickerId = varchar("stickerId", STICKER_ID_LENGTH)
 

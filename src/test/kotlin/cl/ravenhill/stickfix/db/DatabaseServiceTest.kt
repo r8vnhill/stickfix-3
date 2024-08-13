@@ -1,11 +1,15 @@
 package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
+import cl.ravenhill.stickfix.ResetUsersTableListener
+import cl.ravenhill.stickfix.STICKFIX_PUBLIC_ID
+import cl.ravenhill.stickfix.STICKFIX_PUBLIC_USERNAME
+import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdInDatabase
+import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdNotInDatabase
+import cl.ravenhill.stickfix.assertDatabaseOperationFailed
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
-import cl.ravenhill.stickfix.matchers.shouldBeLeft
 import cl.ravenhill.stickfix.matchers.shouldBeRight
-import cl.ravenhill.stickfix.rightOrNull
 import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.PrivateModeState
 import cl.ravenhill.stickfix.states.RevokeState
@@ -17,10 +21,8 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.core.spec.style.scopes.FreeSpecContainerScope
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropTestListener
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.filter
@@ -69,6 +71,10 @@ class DatabaseServiceTest : FreeSpec({
                 testSettingStateForNonExistentUser(database)
             }
 
+            "should fail if the user is the public user" {
+                testSetStateForDefaultUser(database)
+            }
+
             "should succeed if the user exists" {
                 testSettingStateForExistingUser(database)
             }
@@ -90,7 +96,6 @@ class DatabaseServiceTest : FreeSpec({
     }
 }) {
     companion object {
-        private const val EXPECTED_FAILURE_MESSAGE = "Database operation failed."
         private const val EXPECTED_SUCCESS_MESSAGE = "Database operation completed successfully."
 
         /**
@@ -105,25 +110,6 @@ class DatabaseServiceTest : FreeSpec({
                 SchemaUtils.create(Users)
             }
             return database
-        }
-
-        /**
-         * Asserts that the result of a database operation failed with the expected failure message.
-         *
-         * @param result The result of the database operation.
-         * @param expectedErrorMessage The expected error message that should be contained in the failure.
-         * @param T The type of the successful result, which is not used in this failure case.
-         */
-        private fun <T> assertDatabaseOperationFailed(
-            result: Either<DatabaseOperationFailure, DatabaseOperationSuccess<T>>,
-            expectedErrorMessage: String,
-        ) {
-            result.shouldBeLeft()
-                .shouldNotBeNull()
-                .apply {
-                    message shouldBe EXPECTED_FAILURE_MESSAGE
-                    data.message shouldContain expectedErrorMessage
-                }
         }
 
         /**
@@ -161,15 +147,14 @@ class DatabaseServiceTest : FreeSpec({
         }
 
         /**
-         * Tests the retrieval of a non-existent user from the database, asserting that the operation fails with the expected
-         * error message.
+         * Tests the retrieval of a non-existent user from the database, asserting that the operation fails with the
+         * expected error message.
          *
          * @param database The database instance to use for the test.
          */
-        context(FreeSpecContainerScope)
         private suspend fun testRetrievingNonExistentUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdNotInDatabase(database)
             ) { userId ->
                 val result = DatabaseServiceImpl(database).getUser(userId)
@@ -186,7 +171,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testRetrievingExistingUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdInDatabase(database)
             ) { userId ->
                 val result = DatabaseServiceImpl(database).getUser(userId)
@@ -203,7 +188,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testAddingExistingUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdInDatabase(database)
             ) { userId ->
                 val user = StickfixUser("user$userId", userId)
@@ -221,7 +206,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testAddingNonExistentUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdNotInDatabase(database)
             ) { userId ->
                 val user = StickfixUser("user$userId", userId)
@@ -240,13 +225,31 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testSettingStateForNonExistentUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdNotInDatabase(database),
                 arbStateBuilder()
             ) { userId, stateBuilder ->
                 val user = StickfixUser("user$userId", userId)
                 val result = DatabaseServiceImpl(database).setUserState(user, stateBuilder)
                 assertDatabaseOperationFailed(result, "User must be present in the database")
+            }
+        }
+
+        /**
+         * Tests setting the state for the public user in the database. This function verifies that attempting to set a
+         * new state for the default public user (`STICKFIX_PUBLIC_USERNAME` with `STICKFIX_PUBLIC_ID`) results in a
+         * failure, as the state of this user should not be modified.
+         *
+         * @param database The database instance used to perform the operation.
+         */
+        private suspend fun testSetStateForDefaultUser(database: Database) {
+            checkAll(
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
+                arbStateBuilder()
+            ) { stateBuilder ->
+                val user = StickfixUser(STICKFIX_PUBLIC_USERNAME, STICKFIX_PUBLIC_ID)
+                val result = DatabaseServiceImpl(database).setUserState(user, stateBuilder)
+                assertDatabaseOperationFailed(result, "Cannot set user state of default user")
             }
         }
 
@@ -259,7 +262,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testSettingStateForExistingUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdInDatabase(database),
                 arbStateBuilder()
             ) { userId, stateBuilder ->
@@ -282,7 +285,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testDeletingNonExistentUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdNotInDatabase(database)
             ) { userId ->
                 val user = StickfixUser("user$userId", userId)
@@ -300,7 +303,7 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testDeletingExistingUser(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbInitDatabaseWithUserIdInDatabase(database)
             ) { userId ->
                 val user = StickfixUser("user$userId", userId)
@@ -330,8 +333,8 @@ class DatabaseServiceTest : FreeSpec({
         context(FreeSpecContainerScope)
         private suspend fun testSymmetricAddDelete(database: Database) {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetTableListener(database))),
-                Arb.list(Arb.long().map { StickfixUser("user$it", it) }, 1..10)
+                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
+                Arb.list(Arb.long().filter { it != 0L }.map { StickfixUser("user$it", it) }, 1..10)
             ) { users ->
                 val databaseService = DatabaseServiceImpl(database)
                 users.forEach(databaseService::addUser)
@@ -342,56 +345,6 @@ class DatabaseServiceTest : FreeSpec({
             }
         }
     }
-}
-
-/**
- * Generates an arbitrary list of user IDs, inserts them into the database, and then generates a user ID that is not
- * present in the database.
- *
- * This function first generates a list of distinct long integers representing user IDs. It then inserts each of these
- * user IDs into the `Users` table in the database, associating each with a username, chat ID, and setting the state
- * to `IdleState`. After all user IDs have been inserted, it generates and returns a new long integer that is not
- * included in the list of user IDs already in the database.
- *
- * @param database The `Database` instance where user IDs are inserted.
- * @return A new long integer representing a user ID that is not already present in the database.
- */
-private fun arbInitDatabaseWithUserIdNotInDatabase(database: Database) = arbitrary {
-    val userIds = Arb.list(Arb.long(), 0..10).filter { it.distinct().size == it.size }.bind()
-    transaction(database) {
-        userIds.forEach { userId ->
-            Users.insert {
-                it[username] = "user$userId"
-                it[chatId] = userId
-                it[state] = IdleState::class.simpleName!!
-            }
-        }
-    }
-    Arb.long().filter { it !in userIds }.bind()
-}
-
-/**
- * Initializes the database with a set of user IDs and returns a randomly selected user ID from the database.
- *
- * This function generates a list of distinct user IDs, inserts them into the `Users` table of the provided database,
- * and then returns a randomly selected user ID from the inserted values. The randomness is controlled by the given
- * `Random` instance.
- *
- * @param database The database instance where the user IDs will be inserted.
- * @return A randomly selected user ID from the list of inserted user IDs.
- */
-private fun arbInitDatabaseWithUserIdInDatabase(database: Database) = arbitrary { (random, _) ->
-    val userIds = Arb.list(Arb.long(), 1..10).filter { it.distinct().size == it.size }.bind()
-    transaction(database) {
-        userIds.forEach { userId ->
-            Users.insert {
-                it[username] = "user$userId"
-                it[chatId] = userId
-                it[state] = IdleState::class.simpleName!!
-            }
-        }
-    }
-    userIds.random(random)
 }
 
 /**
@@ -418,25 +371,6 @@ private fun arbStateBuilder(): Arb<(StickfixUser) -> SealedState> = Arb.element(
     ::ShuffleState,
     ::StartState
 )
-
-/**
- * A listener for property-based testing that resets the `Users` table after each test.
- *
- * This listener drops the `Users` table and recreates it after each test to ensure that the table is in a clean state
- * before each test run. This helps to prevent data contamination across tests and ensures that each test starts with
- * a fresh database schema.
- *
- * @param database The `Database` instance where the `Users` table is reset.
- */
-private class ResetTableListener(private val database: Database) : PropTestListener {
-
-    override suspend fun afterTest() {
-        transaction(database) {
-            SchemaUtils.drop(Users)
-            SchemaUtils.create(Users)
-        }
-    }
-}
 
 /**
  * Implementation of the `DatabaseService` interface that provides access to the database.
