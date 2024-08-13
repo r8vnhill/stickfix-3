@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  *
  * @property user The `StickfixUser` instance representing the user associated with this state.
  */
-class ShuffleState(override val user: StickfixUser) : SealedState(user) {
+data class ShuffleState(override val user: StickfixUser) : SealedState(user) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**

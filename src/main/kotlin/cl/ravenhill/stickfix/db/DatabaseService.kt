@@ -2,7 +2,6 @@ package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
 import cl.ravenhill.jakt.Jakt.constraints
-import cl.ravenhill.jakt.constrainedTo
 import cl.ravenhill.jakt.constraints.BeNull
 import cl.ravenhill.stickfix.HaveSize
 import cl.ravenhill.stickfix.chat.StickfixUser
@@ -12,6 +11,7 @@ import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.SealedState
 import cl.ravenhill.stickfix.states.resolveState
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -32,10 +32,7 @@ interface DatabaseService {
     private val logger: Logger get() = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Retrieves user information based on the given user ID. This method performs a query to fetch
-     * the user's data from the database and applies constraints to ensure the data's validity. If the
-     * user is found and meets all constraints, a `StickfixUser` object is returned. Otherwise, the method
-     * returns an appropriate error message.
+     * Retrieves user information based on the given user ID.
      *
      * @param userId The ID of the user to be retrieved.
      * @return An `Either` type representing the result of the query operation. On success, it returns
@@ -44,18 +41,14 @@ interface DatabaseService {
      */
     fun getUser(userId: Long): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
-            Users.selectAll().where { Users.id eq userId }.constrainedTo { query ->
-                "User must be present in the database" { query must HaveSize { it > 0 } }
-            }.single().constrainedTo {
-                "User must have an ID" { it.getOrNull(Users.id) mustNot BeNull }
-                "User must have a username" { it.getOrNull(Users.username) mustNot BeNull }
-                "User must have a state" { it.getOrNull(Users.state) mustNot BeNull }
-                "User must have a private mode" { it.getOrNull(Users.privateMode) mustNot BeNull }
-            }.let { row ->
-                StickfixUser(row[Users.username], row[Users.chatId]).apply {
-                    state = resolveState(row[Users.state], this)
+            checkUserExists(userId)
+            Users.selectAll().where { Users.id eq userId }
+                .single().let { row ->
+                    validateUserRow(row)
+                    StickfixUser(row[Users.username], row[Users.chatId]).apply {
+                        state = resolveState(row[Users.state], this)
+                    }
                 }
-            }
         }
 
     /**
@@ -66,41 +59,29 @@ interface DatabaseService {
      */
     fun addUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
-            constraints {
-                "User must not be present in the database" {
-                    Users.selectAll().where { Users.id eq user.id } must HaveSize { it == 0L }
-                }
-            }
+            ensureUserNotExists(user.id)
             Users.insert {
                 it[chatId] = user.id
                 it[username] = user.username
                 it[state] = IdleState::class.simpleName!!
             }
-            StickfixUser(user.username, user.id)
+            user
         }
 
     /**
-     * Sets the state of a user in the database. This function updates the user's state both in-memory and in the
-     * database, ensuring that the user's state is consistently managed.
+     * Sets the state of a user in the database.
      *
-     * @param state The new state to set for the user. This state is represented as an instance of the `State`
-     *   interface.
-     * @return `DatabaseOperationResult` indicating the success or failure of the operation. On success, it returns a
-     *   `DatabaseOperationSuccess` with the updated state. On failure, it returns a `DatabaseOperationFailure`with the
-     *   appropriate error message and exception.
+     * @param state The new state to set for the user.
+     * @return `DatabaseOperationResult` indicating the success or failure of the operation.
      */
     fun setUserState(
         user: StickfixUser,
         state: (StickfixUser) -> SealedState,
     ): Either<DatabaseOperationFailure, DatabaseOperationSuccess<SealedState>> =
         executeDatabaseOperationSafely(database) {
-            constraints {
-                "User must be present in the database" {
-                    Users.selectAll().where { Users.id eq user.id } must HaveSize { it > 0 }
-                }
-            }
+            checkUserExists(user.id)
             val newState = state(user)
-            logTrace(logger) { "Setting user $user.debugInfo state to ${newState::class.simpleName}" }
+            logUserStateChange(user, newState)
             user.state = newState
             Users.update({ Users.id eq user.id }) {
                 it[this.state] = newState::class.simpleName!!
@@ -115,7 +96,58 @@ interface DatabaseService {
      */
     fun deleteUser(user: StickfixUser): Either<DatabaseOperationFailure, DatabaseOperationSuccess<StickfixUser>> =
         executeDatabaseOperationSafely(database) {
+            checkUserExists(user.id)
             Users.deleteWhere { id eq user.id }
             user
         }
+
+    /**
+     * Checks if a user with the specified `userId` exists in the database. This function applies a constraint to ensure
+     * that the user is present in the database. If the user is not found, a constraint violation will be triggered.
+     *
+     * @param userId The ID of the user to check for existence in the database.
+     */
+    private fun checkUserExists(userId: Long) = constraints {
+        "User must be present in the database" {
+            Users.selectAll().where { Users.id eq userId } must HaveSize { it > 0 }
+        }
+    }
+
+    /**
+     * Ensures that a user with the specified `userId` does not exist in the database. This function applies a
+     * constraint to verify that the user is not present. If the user is found, a constraint violation will be
+     * triggered.
+     *
+     * @param userId The ID of the user to check for non-existence in the database.
+     */
+    private fun ensureUserNotExists(userId: Long) = constraints {
+        "User must not be present in the database" {
+            Users.selectAll().where { Users.id eq userId } must HaveSize { it == 0L }
+        }
+    }
+
+    /**
+     * Validates the integrity of a `ResultRow` representing a user. This function applies a series of constraints to
+     * ensure that the row contains all necessary fields (ID, username, state, and private mode). If any of these fields
+     * are missing or null, a constraint violation will be triggered.
+     *
+     * @param row The `ResultRow` to validate.
+     */
+    private fun validateUserRow(row: ResultRow) = constraints {
+        "User must have an ID" { row.getOrNull(Users.id) mustNot BeNull }
+        "User must have a username" { row.getOrNull(Users.username) mustNot BeNull }
+        "User must have a state" { row.getOrNull(Users.state) mustNot BeNull }
+        "User must have a private mode" { row.getOrNull(Users.privateMode) mustNot BeNull }
+    }
+
+    /**
+     * Logs the state change of a user. This function logs a trace message indicating that the user's state is being
+     * updated to a new state. The message includes the user's debug information and the name of the new state.
+     *
+     * @param user The `StickfixUser` whose state is being changed.
+     * @param newState The new state to which the user is being transitioned.
+     */
+    private fun logUserStateChange(user: StickfixUser, newState: SealedState) {
+        logTrace(logger) { "Setting user ${user.debugInfo} state to ${newState::class.simpleName}" }
+    }
 }
