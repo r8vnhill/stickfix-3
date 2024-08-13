@@ -14,7 +14,7 @@ import io.kotest.matchers.should
  *
  * @return A `Matcher` that checks if an `Either` is a `Left`.
  */
-fun <L, R> beLeft() = Matcher<Either<L, R>> {
+fun <L> beLeft() = Matcher<Either<L,*>> {
     MatcherResult(
         it.isLeft(),
         { "Expected Either to be Left, but was Right" },
@@ -32,8 +32,7 @@ fun <L, R> beLeft() = Matcher<Either<L, R>> {
  * @receiver The `Either` instance to be checked.
  * @throws AssertionError if the `Either` is not a `Left`.
  */
-fun <L, R> Either<L, R>.shouldBeLeft(): Either<L, R> {
+fun <L> Either<L, *>.shouldBeLeft(): L? {
     this should beLeft()
-    return this
+    return this.leftOrNull()
 }
-

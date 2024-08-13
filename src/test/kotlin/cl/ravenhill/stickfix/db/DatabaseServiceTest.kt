@@ -5,6 +5,7 @@ import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.matchers.shouldBeLeft
 import cl.ravenhill.stickfix.matchers.shouldBeRight
+import cl.ravenhill.stickfix.rightOrNull
 import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.states.PrivateModeState
 import cl.ravenhill.stickfix.states.RevokeState
@@ -100,6 +101,7 @@ class DatabaseServiceTest : FreeSpec({
         private fun setupDatabase(): Database {
             val database = Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;", "org.h2.Driver")
             transaction(database) {
+                SchemaUtils.drop(Users)
                 SchemaUtils.create(Users)
             }
             return database
@@ -117,7 +119,6 @@ class DatabaseServiceTest : FreeSpec({
             expectedErrorMessage: String,
         ) {
             result.shouldBeLeft()
-                .leftOrNull()
                 .shouldNotBeNull()
                 .apply {
                     message shouldBe EXPECTED_FAILURE_MESSAGE
@@ -136,7 +137,6 @@ class DatabaseServiceTest : FreeSpec({
             expectedUser: StickfixUser,
         ) {
             result.shouldBeRight()
-                .rightOrNull()
                 .shouldNotBeNull()
                 .shouldBe(DatabaseOperationSuccess(EXPECTED_SUCCESS_MESSAGE, expectedUser))
         }
@@ -266,7 +266,6 @@ class DatabaseServiceTest : FreeSpec({
                 val user = StickfixUser("user$userId", userId)
                 val result = DatabaseServiceImpl(database).setUserState(user, stateBuilder)
                 result.shouldBeRight()
-                    .rightOrNull()
                     .shouldNotBeNull()
                     .apply {
                         this.data shouldBe stateBuilder(user)
@@ -419,17 +418,6 @@ private fun arbStateBuilder(): Arb<(StickfixUser) -> SealedState> = Arb.element(
     ::ShuffleState,
     ::StartState
 )
-
-/**
- * Returns the `Right` value of an `Either` if it exists, or `null` if the `Either` is `Left`.
- *
- * This extension function is used to extract the `Right` value from an `Either` if it is present, returning it
- * directly. If the `Either` is a `Left`, the function returns `null`.
- *
- * @receiver The `Either` instance from which to extract the `Right` value.
- * @return The `Right` value if present, or `null` if the `Either` is `Left`.
- */
-private fun <A, B> Either<A, B>.rightOrNull(): B? = fold({ null }, { it })
 
 /**
  * A listener for property-based testing that resets the `Users` table after each test.

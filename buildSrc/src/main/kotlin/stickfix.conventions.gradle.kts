@@ -30,3 +30,10 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     isReproducibleFileOrder = true
 }
 
+kotlin {
+    sourceSets.configureEach {
+        languageSettings {
+            optIn("io.kotest.common.ExperimentalKotest")
+        }
+    }
+}

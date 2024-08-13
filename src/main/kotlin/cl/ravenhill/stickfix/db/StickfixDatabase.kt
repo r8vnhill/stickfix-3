@@ -51,12 +51,14 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         database = Database.connect(jdbcUrl, driverName)
         return executeDatabaseOperationSafely(database) {
             SchemaUtils.create(Meta, Users, Stickers)
-            Users.insert {
-                it[username] = "STICKFIX_PUBLIC"
-                it[id] = 0
-                it[privateMode] = false
-                it[shuffle] = false
-                it[state] = IdleState::class.simpleName!!
+            if (Users.selectAll().where { Users.id eq 0L }.empty()) {
+                Users.insert {
+                    it[id] = 0
+                    it[username] = "STICKFIX_PUBLIC"
+                    it[state] = IdleState::class.simpleName!!
+                    it[privateMode] = false
+                    it[shuffle] = false
+                }
             }
             this@StickfixDatabase
         }

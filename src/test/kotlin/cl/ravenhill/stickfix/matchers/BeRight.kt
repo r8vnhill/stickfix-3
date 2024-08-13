@@ -1,6 +1,7 @@
 package cl.ravenhill.stickfix.matchers
 
 import arrow.core.Either
+import cl.ravenhill.stickfix.rightOrNull
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.should
@@ -14,7 +15,7 @@ import io.kotest.matchers.should
  *
  * @return A `Matcher` that checks if an `Either` is a `Right`.
  */
-fun <L, R> beRight() = Matcher<Either<L, R>> { actual ->
+fun <R> beRight() = Matcher<Either<*, R>> { actual ->
     MatcherResult(
         actual.isRight(),
         { "Expected Either to be Right, but was $actual" },
@@ -33,7 +34,7 @@ fun <L, R> beRight() = Matcher<Either<L, R>> { actual ->
  * @return The original `Either` instance, if it is a `Right`.
  * @throws AssertionError if the `Either` is not a `Right`.
  */
-fun <L, R> Either<L, R>.shouldBeRight(): Either<L, R> {
+fun <R> Either<*, R>.shouldBeRight(): R? {
     this should beRight()
-    return this
+    return this.rightOrNull()
 }
