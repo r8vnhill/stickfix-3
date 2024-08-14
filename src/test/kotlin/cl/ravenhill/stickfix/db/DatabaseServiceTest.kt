@@ -2,8 +2,9 @@ package cl.ravenhill.stickfix.db
 
 import arrow.core.Either
 import cl.ravenhill.stickfix.ResetUsersTableListener
-import cl.ravenhill.stickfix.STICKFIX_PUBLIC_ID
-import cl.ravenhill.stickfix.STICKFIX_PUBLIC_USERNAME
+import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
+import cl.ravenhill.stickfix.STICKFIX_USER_NAME_USERNAME
+import cl.ravenhill.stickfix.arbDatabase
 import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdInDatabase
 import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdNotInDatabase
 import cl.ravenhill.stickfix.assertDatabaseOperationFailed
@@ -23,12 +24,16 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.az
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -48,17 +53,17 @@ class DatabaseServiceTest : FreeSpec({
     "A DatabaseService" - {
         "retrieving a user" - {
             "should fail when the user does not exist" {
-                testRetrievingNonExistentUser(database)
+                testRetrievingNonExistentUser()
             }
 
             "should succeed when the user exists" {
-                testRetrievingExistingUser(database)
+                testRetrievingExistingUser()
             }
         }
 
         "adding a new user" - {
             "should fail if the user already exists" {
-                testAddingExistingUser(database)
+                testAddingExistingUser()
             }
 
             "should succeed if the user does not exist" {
@@ -149,32 +154,45 @@ class DatabaseServiceTest : FreeSpec({
         /**
          * Tests the retrieval of a non-existent user from the database, asserting that the operation fails with the
          * expected error message.
-         *
-         * @param database The database instance to use for the test.
          */
-        private suspend fun testRetrievingNonExistentUser(database: Database) {
+        private suspend fun testRetrievingNonExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
-                arbInitDatabaseWithUserIdNotInDatabase(database)
-            ) { userId ->
-                val result = DatabaseServiceImpl(database).getUser(userId)
+                PropTestConfig(iterations = 100),
+                arbDatabaseService()
+                    .withUsers()
+                    .andNonExistentUserId()
+            ) { (databaseService, userId) ->
+                val result = databaseService.getUser(userId)
                 assertDatabaseOperationFailed(result, "User must be present in the database")
             }
         }
 
         /**
-         * Tests the retrieval of an existing user from the database, asserting that the operation succeeds and returns the
-         * expected user data.
+         * Helper function to generate a test case for an existing user in the database.
          *
-         * @param database The database instance to use for the test.
+         * @param test The test logic to apply on the database service and user ID.
+         */
+        private suspend fun withExistingUserTest(test: suspend (DatabaseService, Long) -> Unit) {
+            checkAll(
+                PropTestConfig(iterations = 100),
+                Arb.list(Arb.long().filter { it != 0L }, 1..10).flatMap { ids ->
+                    arbDatabaseService().withUsers(Arb.constant(ids)).flatMap { dbService ->
+                        Arb.element(ids).map { dbService to it }
+                    }
+                }
+            ) { (databaseService, userId) ->
+                test(databaseService, userId)
+            }
+        }
+
+        /**
+         * Tests the retrieval of an existing user from the database, asserting that the operation succeeds and returns
+         * the expected user data.
          */
         context(FreeSpecContainerScope)
-        private suspend fun testRetrievingExistingUser(database: Database) {
-            checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
-                arbInitDatabaseWithUserIdInDatabase(database)
-            ) { userId ->
-                val result = DatabaseServiceImpl(database).getUser(userId)
+        private suspend fun testRetrievingExistingUser() {
+            withExistingUserTest { databaseService, userId ->
+                val result = databaseService.getUser(userId)
                 assertDatabaseOperationSucceeded(result, StickfixUser("user$userId", userId))
             }
         }
@@ -182,17 +200,12 @@ class DatabaseServiceTest : FreeSpec({
         /**
          * Tests the addition of an existing user to the database, asserting that the operation fails with the expected
          * error message.
-         *
-         * @param database The database instance to use for the test.
          */
         context(FreeSpecContainerScope)
-        private suspend fun testAddingExistingUser(database: Database) {
-            checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
-                arbInitDatabaseWithUserIdInDatabase(database)
-            ) { userId ->
+        private suspend fun testAddingExistingUser() {
+            withExistingUserTest { databaseService, userId ->
                 val user = StickfixUser("user$userId", userId)
-                val result = DatabaseServiceImpl(database).addUser(user)
+                val result = databaseService.addUser(user)
                 assertDatabaseOperationFailed(result, "User must not be present in the database")
             }
         }
@@ -247,7 +260,7 @@ class DatabaseServiceTest : FreeSpec({
                 PropTestConfig(listeners = listOf(ResetUsersTableListener(database))),
                 arbStateBuilder()
             ) { stateBuilder ->
-                val user = StickfixUser(STICKFIX_PUBLIC_USERNAME, STICKFIX_PUBLIC_ID)
+                val user = StickfixUser(STICKFIX_USER_NAME_USERNAME, STICKFIX_DEFAULT_USER_ID)
                 val result = DatabaseServiceImpl(database).setUserState(user, stateBuilder)
                 assertDatabaseOperationFailed(result, "Cannot set user state of default user")
             }
@@ -345,6 +358,69 @@ class DatabaseServiceTest : FreeSpec({
             }
         }
     }
+}
+
+/**
+ * Generates an arbitrary `DatabaseServiceImpl` instance using a specified database name. This function leverages the
+ * `arbDatabase` function to create a database connection and then* wraps it in a `DatabaseServiceImpl`, providing a
+ * convenient way to generate `DatabaseServiceImpl` instances for testing purposes.
+
+ * @param name An arbitrary string generator that produces the name of the database. Defaults to generating alphanumeric
+ *   strings of length 1 to 16.
+ * @return An `Arb<DatabaseServiceImpl>` that generates instances of `DatabaseServiceImpl` connected to a randomly named
+ *   database.
+ */
+private fun arbDatabaseService(name: Arb<String> = Arb.string(1..16, Codepoint.az())) = arbDatabase(name) {
+    DatabaseServiceImpl(it)
+}
+
+/**
+ * Enhances an arbitrary `DatabaseService` instance by pre-populating it with users based on the provided list of IDs.
+ * This function creates users in the database corresponding to each ID in the provided list, assigning each user a
+ * default username and state. It returns a new arbitrary `DatabaseService` instance with the users inserted.
+ *
+ * @param ids An arbitrary list of user IDs to be inserted into the database. Each ID in the list corresponds to a user
+ *   that will be created with a default username in the format "user{id}" and an initial state of `IdleState`.
+ * @return An `Arb<DatabaseService>` that generates instances of `DatabaseService`, each populated with users as
+ *   specified by the provided list of IDs.
+ */
+private fun Arb<DatabaseService>.withUsers(
+    ids: Arb<List<Long>> = Arb.list(Arb.long().filter { it != 0L })
+): Arb<DatabaseService> = flatMap { dbService ->
+    ids.map {
+        transaction(dbService.database) {
+            SchemaUtils.create(Users)
+            it.forEach { id ->
+                if (Users.selectAll().where { Users.chatId eq id }.empty()) {
+                    Users.insert {
+                        it[chatId] = id
+                        it[username] = "user$id"
+                        it[state] = IdleState::class.simpleName!!
+                    }
+                }
+            }
+        }
+        dbService
+    }
+}
+
+
+/**
+ * Enhances an arbitrary `DatabaseService` instance by pairing it with a non-existent user ID. This function finds a
+ * random long value that is not currently used as a user ID in the database and pairs it with the provided
+ * `DatabaseService`. The resulting pair can be used to test database operations where a non-existent user ID is
+ * required.
+ *
+ * @return An `Arb<Pair<DatabaseService, Long>>` that generates pairs of `DatabaseService` instances and non-existent
+ *   user IDs. The `DatabaseService` in each pair is unchanged, while the `Long` represents a user ID that does not
+ *   exist in the corresponding database.
+ */
+private fun Arb<DatabaseService>.andNonExistentUserId() = flatMap { dbService ->
+    Arb.long().filter {
+        transaction(dbService.database) {
+            Users.selectAll().where { Users.chatId eq it }.empty()
+        }
+    }.map { dbService to it }
 }
 
 /**

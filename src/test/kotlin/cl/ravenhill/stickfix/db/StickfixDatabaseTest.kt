@@ -3,10 +3,11 @@ package cl.ravenhill.stickfix.db
 import cl.ravenhill.stickfix.DRIVER_NAME
 import cl.ravenhill.stickfix.JDBC_URL
 import cl.ravenhill.stickfix.ResetUsersTableListener
-import cl.ravenhill.stickfix.STICKFIX_PUBLIC_ID
-import cl.ravenhill.stickfix.STICKFIX_PUBLIC_USERNAME
-import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdInDatabase
-import cl.ravenhill.stickfix.arbInitDatabaseWithUserIdNotInDatabase
+import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
+import cl.ravenhill.stickfix.STICKFIX_USER_NAME_USERNAME
+import cl.ravenhill.stickfix.arbDatabase
+import cl.ravenhill.stickfix.arbInitDatabaseWithUserInDatabase
+import cl.ravenhill.stickfix.arbInitDatabaseWithUserNotInDatabase
 import cl.ravenhill.stickfix.assertDatabaseOperationFailed
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
@@ -21,17 +22,19 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropTestListener
 import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.az
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 class StickfixDatabaseTest : FreeSpec({
 
@@ -44,16 +47,16 @@ class StickfixDatabaseTest : FreeSpec({
 
     "A StickfixDatabase" - {
         "should be able to initialize the database" {
-            testDatabaseInitialization(database)
+            testDatabaseInitialization()
         }
 
         "when querying for the API key" - {
             "should return a DatabaseOperationFailure when the key is not found" {
-                testMissingApiKey(database)
+                testMissingApiKey()
             }
 
             "should return a DatabaseOperationSuccess when the key is found" {
-                testPresentApiKey(database)
+                testPresentApiKey()
             }
         }
 
@@ -116,37 +119,47 @@ class StickfixDatabaseTest : FreeSpec({
          *
          * @param database The instance of StickfixDatabase to be tested.
          */
-        fun testDatabaseInitialization(database: StickfixDatabase) {
-            // Initialize the database and verify the operation was successful
-            database.init()
-                .shouldBeRight()
-                .shouldNotBeNull()
-                .data shouldBe database
+        suspend fun testDatabaseInitialization() {
+            checkAll(
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase(Arb.string(1..16, Codepoint.az()))
+            ) { database ->
+                // Initialize the database and verify the operation was successful
+                database.init()
+                    .shouldBeRight()
+                    .shouldNotBeNull()
+                    .data shouldBe database
 
-            // Verify that the public/default user exists and has the correct properties
-            database.getUser(STICKFIX_PUBLIC_ID)
-                .shouldBeRight()
-                .shouldNotBeNull()
-                .data
-                .apply {
-                    id shouldBe STICKFIX_PUBLIC_ID
-                    username shouldBe STICKFIX_PUBLIC_USERNAME
-                    state shouldBe stickfixDefaultUserState(this)
-                }
+                // Verify that the public/default user exists and has the correct properties
+                database.getUser(STICKFIX_DEFAULT_USER_ID)
+                    .shouldBeRight()
+                    .shouldNotBeNull()
+                    .data
+                    .apply {
+                        id shouldBe STICKFIX_DEFAULT_USER_ID
+                        username shouldBe STICKFIX_USER_NAME_USERNAME
+                        state shouldBe stickfixDefaultUserState(this)
+                    }
+            }
         }
 
         /**
          * Tests the behavior of the `queryApiKey` method in the `StickfixDatabase` when the API key is missing from the
          * database. This function checks whether the database returns a failure when the API key is not found in the
          * meta table. It asserts that the error message indicates the absence of the API key in the meta table.
-         *
-         * @param database The `StickfixDatabase` instance used to query the API key.
          */
-        private fun testMissingApiKey(database: StickfixDatabase) {
-            database.queryApiKey()
-                .shouldBeLeft()
-                .shouldNotBeNull()
-                .data.message shouldContain "API_KEY must be present in meta table"
+        private suspend fun testMissingApiKey() {
+            checkAll(
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase().initialized()
+            ) { database ->
+                database.queryApiKey()
+                    .shouldBeLeft()
+                    .shouldNotBeNull()
+                    .apply {
+                        data.message shouldContain "API_KEY must be present in meta table"
+                    }
+            }
         }
 
         /**
@@ -154,23 +167,19 @@ class StickfixDatabaseTest : FreeSpec({
          * property-based testing to verify that when an API key is inserted into the `Meta` table, it can be
          * successfully retrieved from the database. The test ensures that the `queryApiKey` method of the
          * `StickfixDatabase` class behaves correctly when the API key is present.
-         *
-         * @param database The `StickfixDatabase` instance used to interact with the database during the test.
          */
-        private suspend fun testPresentApiKey(database: StickfixDatabase) {
+        private suspend fun testPresentApiKey() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetMetaTableAfterEach(database))),
-                arbKey()
-            ) { apiKey ->
-                transaction(database.database) {
-                    // Insert the generated API key into the Meta table
-                    Meta.insert {
-                        it[key] = "API_KEY"
-                        it[value] = apiKey
-                    }
+                PropTestConfig(iterations = 100),
+                arbKey().flatMap { key ->
+                    arbStickfixDatabase()
+                        .initialized()
+                        .withApiKey(Arb.constant(key))
+                        .map {
+                            it to key
+                        }
                 }
-
-                // Query the API key from the database and verify it matches the inserted value
+            ) { (database, apiKey) ->
                 database.queryApiKey()
                     .shouldBeRight()
                     .shouldNotBeNull()
@@ -222,7 +231,7 @@ class StickfixDatabaseTest : FreeSpec({
          * @throws AssertionError If the private mode update does not result in a failure or the failure message is incorrect.
          */
         private suspend fun testSettingPrivateModeDefaultUser(database: StickfixDatabase) {
-            val user = StickfixUser(STICKFIX_PUBLIC_USERNAME, STICKFIX_PUBLIC_ID)
+            val user = StickfixUser(STICKFIX_USER_NAME_USERNAME, STICKFIX_DEFAULT_USER_ID)
             checkAll(Arb.enum<PrivateMode>()) { mode ->
                 val result = database.setPrivateMode(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")
@@ -274,7 +283,7 @@ class StickfixDatabaseTest : FreeSpec({
          * @param database The StickfixDatabase instance to be tested.
          */
         private suspend fun testSettingShuffleModeDefaultUser(database: StickfixDatabase) {
-            val user = StickfixUser(STICKFIX_PUBLIC_USERNAME, STICKFIX_PUBLIC_ID)
+            val user = StickfixUser(STICKFIX_USER_NAME_USERNAME, STICKFIX_DEFAULT_USER_ID)
             checkAll(Arb.enum<ShuffleMode>()) { mode ->
                 val result = database.setShuffle(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")
@@ -354,52 +363,51 @@ private fun Boolean.toPrivateMode() = if (this) PrivateMode.ENABLED else Private
 private fun arbKey(): Arb<String> = Arb.string(1..16, Codepoint.hex())
 
 /**
- * Generates an arbitrary `StickfixUser` that is not present in the given database. This function relies on an existing
- * arbitrary that initializes the database with users and maps it to produce a `StickfixUser` instance with the
- * specified ID that is not already present in the database.
+ * Generates an `Arb<StickfixDatabase>` that creates instances of `StickfixDatabase` with a given name.
  *
- * @param database The `Database` instance where the user should not be present.
- * @return An `Arb<StickfixUser>` that generates `StickfixUser` instances with IDs not present in the specified
- *   database.
+ * This function takes an arbitrary generator for `String` values, which are used to construct unique JDBC URLs for each
+ * `StickfixDatabase` instance. The database instances are initialized with a specified driver name.
+ *
+ * @param name An `Arb<String>` generator that provides the names used to generate unique JDBC URLs.
+ * @return `Arb<StickfixDatabase>` A generator that produces `StickfixDatabase` instances.
  */
-private fun arbInitDatabaseWithUserNotInDatabase(database: Database): Arb<StickfixUser> =
-    arbInitDatabaseWithUserIdNotInDatabase(database).map { StickfixUser("user$it", it) }
+private fun arbStickfixDatabase(name: Arb<String> = Arb.string(1..16, Codepoint.hex())): Arb<StickfixDatabase> =
+    arbDatabase(name) { StickfixDatabase(it.url, DRIVER_NAME) }
 
 /**
- * Generates an arbitrary `StickfixUser` that is already present in the database. This function uses a previously
- * initialized list of user IDs in the database and maps them to corresponding `StickfixUser` instances.
+ * Extends an `Arb<StickfixDatabase>` with a function that initializes each `StickfixDatabase` instance. This ensures
+ * that the database schema and any required tables are created before the database instance is returned.
  *
- * @param database The database instance where the users are stored.
- * @return An `Arb<StickfixUser>` representing a user that is already present in the database.
+ * @return An `Arb<StickfixDatabase>` where each database instance has been initialized by calling its `init` method.
  */
-private fun arbInitDatabaseWithUserInDatabase(database: Database): Arb<StickfixUser> =
-    arbInitDatabaseWithUserIdInDatabase(database).map { StickfixUser("user$it", it) }
-
-
-/**
- * A `PropTestListener` implementation that resets the `Meta` table in the `StickfixDatabase` before and after each test.
- *
- * This class is used to ensure a clean state of the `Meta` table for each property-based test. Before each test, the
- * database is initialized, ensuring that the `Meta` table is created and ready for use. After each test, the `Meta`
- * table is dropped, removing any data that was inserted during the test. This prevents any leftover state from
- * affecting subsequent tests, ensuring test isolation and reliability.
- *
- * @property database The `StickfixDatabase` instance that contains the `Meta` table to be reset.
- */
-private class ResetMetaTableAfterEach(private val database: StickfixDatabase) : PropTestListener {
-
-    /**
-     * Initializes the `StickfixDatabase` before each test, ensuring that the `Meta` table is created and ready for use.
-     */
-    override suspend fun beforeTest() {
-        database.init()
-    }
-
-    /**
-     * Drops the `Meta` table after each test, removing any data that was inserted during the test. This ensures that
-     * subsequent tests start with a clean state.
-     */
-    override suspend fun afterTest() = transaction(database.database) {
-        SchemaUtils.drop(Meta)
-    }
+private fun Arb<StickfixDatabase>.initialized(): Arb<StickfixDatabase> = map { database ->
+    database.init()
+    database
 }
+
+/**
+ * Extends an `Arb<StickfixDatabase>` with a function to add an API key to the database. This function maps over the
+ * provided `StickfixDatabase` instance, inserting the specified API key into the `Meta` table of the database.
+ *
+ * @param apiKey An `Arb<String>` that provides the API key to be inserted. If not provided, it defaults to `arbKey()`.
+ * @return An `Arb<StickfixDatabase>` where each database instance is populated with the specified API key in the `Meta`
+ *   table.
+ */
+private fun Arb<StickfixDatabase>.withApiKey(apiKey: Arb<String> = arbKey()): Arb<StickfixDatabase> =
+    flatMap { database ->
+        apiKey.map { key ->
+            transaction(database.database) {
+                if (Meta.selectAll().where { Meta.key eq "API_KEY" }.empty()) {
+                    Meta.insert {
+                        it[Meta.key] = "API_KEY"
+                        it[value] = key
+                    }
+                } else {
+                    Meta.update({ Meta.key eq "API_KEY" }) {
+                        it[value] = key
+                    }
+                }
+            }
+            database
+        }
+    }
