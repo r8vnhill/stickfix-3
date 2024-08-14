@@ -4,7 +4,7 @@ import cl.ravenhill.stickfix.DRIVER_NAME
 import cl.ravenhill.stickfix.JDBC_URL
 import cl.ravenhill.stickfix.ResetUsersTableListener
 import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
-import cl.ravenhill.stickfix.STICKFIX_USER_NAME_USERNAME
+import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USERNAME
 import cl.ravenhill.stickfix.arbDatabase
 import cl.ravenhill.stickfix.arbInitDatabaseWithUserInDatabase
 import cl.ravenhill.stickfix.arbInitDatabaseWithUserNotInDatabase
@@ -137,7 +137,7 @@ class StickfixDatabaseTest : FreeSpec({
                     .data
                     .apply {
                         id shouldBe STICKFIX_DEFAULT_USER_ID
-                        username shouldBe STICKFIX_USER_NAME_USERNAME
+                        username shouldBe STICKFIX_DEFAULT_USERNAME
                         state shouldBe stickfixDefaultUserState(this)
                     }
             }
@@ -231,7 +231,7 @@ class StickfixDatabaseTest : FreeSpec({
          * @throws AssertionError If the private mode update does not result in a failure or the failure message is incorrect.
          */
         private suspend fun testSettingPrivateModeDefaultUser(database: StickfixDatabase) {
-            val user = StickfixUser(STICKFIX_USER_NAME_USERNAME, STICKFIX_DEFAULT_USER_ID)
+            val user = StickfixUser(STICKFIX_DEFAULT_USERNAME, STICKFIX_DEFAULT_USER_ID)
             checkAll(Arb.enum<PrivateMode>()) { mode ->
                 val result = database.setPrivateMode(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")
@@ -283,7 +283,7 @@ class StickfixDatabaseTest : FreeSpec({
          * @param database The StickfixDatabase instance to be tested.
          */
         private suspend fun testSettingShuffleModeDefaultUser(database: StickfixDatabase) {
-            val user = StickfixUser(STICKFIX_USER_NAME_USERNAME, STICKFIX_DEFAULT_USER_ID)
+            val user = StickfixUser(STICKFIX_DEFAULT_USERNAME, STICKFIX_DEFAULT_USER_ID)
             checkAll(Arb.enum<ShuffleMode>()) { mode ->
                 val result = database.setShuffle(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")

@@ -33,7 +33,7 @@ internal const val JDBC_URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
 internal fun jdbcUrl(databaseName: String) = "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1"
 internal const val DRIVER_NAME = "org.h2.Driver"
 internal const val STICKFIX_DEFAULT_USER_ID = 0L
-internal const val STICKFIX_USER_NAME_USERNAME = "STICKFIX_PUBLIC"
+internal const val STICKFIX_DEFAULT_USERNAME = "STICKFIX_PUBLIC"
 internal val stickfixDefaultUserState = ::IdleState
 
 /**
