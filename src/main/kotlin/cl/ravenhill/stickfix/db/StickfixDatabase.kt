@@ -162,8 +162,5 @@ class StickfixDatabase(private val jdbcUrl: String, private val driverName: Stri
         }
     }
 
-    // region : Utility functions
-    override fun toString() =
-        "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
-    // endregion
+    override fun toString() = "StickfixDatabase(jdbcUrl='$jdbcUrl', driverName='$driverName')"
 }

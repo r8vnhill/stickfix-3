@@ -7,6 +7,7 @@ import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
 import cl.ravenhill.stickfix.arbDatabase
 import cl.ravenhill.stickfix.assertDatabaseOperationFailed
 import cl.ravenhill.stickfix.chat.StickfixUser
+import cl.ravenhill.stickfix.chat.arbUser
 import cl.ravenhill.stickfix.db.schema.Meta
 import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.matchers.shouldBeLeft
@@ -381,7 +382,7 @@ private fun arbKey(): Arb<String> = Arb.string(1..16, Codepoint.hex())
  * @param name An `Arb<String>` generator that provides the names used to generate unique JDBC URLs.
  * @return `Arb<StickfixDatabase>` A generator that produces `StickfixDatabase` instances.
  */
-private fun arbStickfixDatabase(name: Arb<String> = Arb.string(1..16, Codepoint.hex())): Arb<StickfixDatabase> =
+internal fun arbStickfixDatabase(name: Arb<String> = Arb.string(1..16, Codepoint.hex())): Arb<StickfixDatabase> =
     arbDatabase(name) { StickfixDatabase(it.url, DRIVER_NAME) }
 
 /**
@@ -390,7 +391,7 @@ private fun arbStickfixDatabase(name: Arb<String> = Arb.string(1..16, Codepoint.
  *
  * @return An `Arb<StickfixDatabase>` where each database instance has been initialized by calling its `init` method.
  */
-private fun Arb<StickfixDatabase>.initialized(): Arb<StickfixDatabase> = map { database ->
+internal fun Arb<StickfixDatabase>.initialized(): Arb<StickfixDatabase> = map { database ->
     database.init()
     database
 }
@@ -403,7 +404,7 @@ private fun Arb<StickfixDatabase>.initialized(): Arb<StickfixDatabase> = map { d
  * @return An `Arb<StickfixDatabase>` where each database instance is populated with the specified API key in the `Meta`
  *   table.
  */
-private fun Arb<StickfixDatabase>.withApiKey(apiKey: Arb<String> = arbKey()): Arb<StickfixDatabase> =
+internal fun Arb<StickfixDatabase>.withApiKey(apiKey: Arb<String> = arbKey()): Arb<StickfixDatabase> =
     flatMap { database ->
         apiKey.map { key ->
             transaction(database.database) {
@@ -464,7 +465,7 @@ private fun arbStickfixDatabaseAndUser(): Arb<Pair<StickfixDatabase, StickfixUse
         }
     }
 
-private fun Arb<StickfixDatabase>.withUsers(
+internal fun Arb<StickfixDatabase>.withUsers(
     users: Arb<List<StickfixUser>> = Arb.list(arbUser(), 1..10)
 ): Arb<StickfixDatabase> =
     flatMap { database ->
@@ -488,25 +489,3 @@ private fun Arb<StickfixDatabase>.withUsers(
             database
         }
     }
-
-/**
- * Generates an arbitrary `StickfixUser` instance with a specified username and ID.
- *
- * This function creates a `StickfixUser` by first filtering out any IDs that match the default user ID
- * (`STICKFIX_DEFAULT_USER_ID`), ensuring that the generated users are not the default user. It then pairs a valid,
- * non-default user ID with a generated username to create a `StickfixUser`.
- *
- * @param username An `Arb<Username>` that generates arbitrary usernames for the user.
- * @param id An `Arb<Long>` that generates arbitrary user IDs, which are filtered to exclude the default user ID.
- * @return An `Arb<StickfixUser>` that produces arbitrary `StickfixUser` instances with valid usernames and IDs.
- */
-private fun arbUser(
-    username: Arb<Username> = Arb.usernames(),
-    id: Arb<Long> = Arb.long()
-): Arb<StickfixUser> =
-    id.filter { it != STICKFIX_DEFAULT_USER_ID }
-        .flatMap { validId ->
-            username.map { name ->
-                StickfixUser(name.value, validId)
-            }
-        }
