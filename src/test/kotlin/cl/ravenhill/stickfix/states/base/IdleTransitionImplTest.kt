@@ -21,4 +21,3 @@ class IdleTransitionImplTest : FreeSpec({
         }
     }
 })
-
