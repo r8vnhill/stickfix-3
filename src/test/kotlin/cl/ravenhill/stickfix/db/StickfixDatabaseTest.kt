@@ -2,20 +2,20 @@ package cl.ravenhill.stickfix.db
 
 import cl.ravenhill.stickfix.DRIVER_NAME
 import cl.ravenhill.stickfix.JDBC_URL
-import cl.ravenhill.stickfix.ResetUsersTableListener
-import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
 import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USERNAME
+import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
 import cl.ravenhill.stickfix.arbDatabase
-import cl.ravenhill.stickfix.arbInitDatabaseWithUserInDatabase
-import cl.ravenhill.stickfix.arbInitDatabaseWithUserNotInDatabase
 import cl.ravenhill.stickfix.assertDatabaseOperationFailed
 import cl.ravenhill.stickfix.chat.StickfixUser
 import cl.ravenhill.stickfix.db.schema.Meta
+import cl.ravenhill.stickfix.db.schema.Users
 import cl.ravenhill.stickfix.matchers.shouldBeLeft
 import cl.ravenhill.stickfix.matchers.shouldBeRight
 import cl.ravenhill.stickfix.modes.PrivateMode
 import cl.ravenhill.stickfix.modes.ShuffleMode
+import cl.ravenhill.stickfix.states.IdleState
 import cl.ravenhill.stickfix.stickfixDefaultUserState
+import cl.ravenhill.stickfix.withUserIds
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -23,13 +23,18 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.hex
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbs.Username
+import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -62,43 +67,43 @@ class StickfixDatabaseTest : FreeSpec({
 
         "when retrieving a user" - {
             "should return a DatabaseOperationFailure if the user is not found" {
-                testRetrievingNonExistentUser(database)
+                testRetrievingNonExistentUser()
             }
 
             "should return a DatabaseOperationSuccess if the user is found" {
-                testRetrievingExistentUser(database)
+                testRetrievingExistentUser()
             }
         }
 
         "when setting the private mode" - {
             "should return a DatabaseOperationFailure if" - {
                 "trying to set the mode of the default user" {
-                    testSettingPrivateModeDefaultUser(database)
+                    testSettingPrivateModeDefaultUser()
                 }
 
                 "the user is not found" {
-                    testSettingPrivateModeNonExistentUser(database)
+                    testSettingPrivateModeNonExistentUser()
                 }
             }
 
             "should return a DatabaseOperationSuccess if the mode is set successfully" {
-                testSettingPrivateModeExistentUser(database)
+                testSettingPrivateModeExistentUser()
             }
         }
 
         "when setting shuffle mode" - {
             "should return a DatabaseOperationFailure if" - {
                 "trying to set the mode of the default user" {
-                    testSettingShuffleModeDefaultUser(database)
+                    testSettingShuffleModeDefaultUser()
                 }
 
                 "the user is not found" {
-                    testSettingShuffleModeNonExistentUser(database)
+                    testSettingShuffleModeNonExistentUser()
                 }
             }
 
             "should return a DatabaseOperationSuccess if the mode is set successfully" {
-                testSettingShuffleModeExistentUser(database)
+                testSettingShuffleModeExistentUser()
             }
         }
     }
@@ -122,7 +127,7 @@ class StickfixDatabaseTest : FreeSpec({
         suspend fun testDatabaseInitialization() {
             checkAll(
                 PropTestConfig(iterations = 100),
-                arbStickfixDatabase(Arb.string(1..16, Codepoint.az()))
+                arbStickfixDatabase()
             ) { database ->
                 // Initialize the database and verify the operation was successful
                 database.init()
@@ -191,14 +196,16 @@ class StickfixDatabaseTest : FreeSpec({
          * Tests retrieving a user that does not exist in the Stickfix database. This function checks that the
          * `getUser` method correctly identifies when a user is not present in the database and returns a failure.
          *
-         * @param database The StickfixDatabase instance to be tested.
          * @throws AssertionError If the user retrieval does not result in a failure or the failure message is incorrect.
          */
-        private suspend fun testRetrievingNonExistentUser(database: StickfixDatabase) {
+        private suspend fun testRetrievingNonExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserNotInDatabase(database.database)
-            ) { user ->
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase()
+                    .initialized()
+                    .withUserIds()
+                    .andNonExistentUser()
+            ) { (database, user) ->
                 val result = database.getUser(user)
                 assertDatabaseOperationFailed(result, "User must be present in the database")
             }
@@ -208,14 +215,13 @@ class StickfixDatabaseTest : FreeSpec({
          * Tests retrieving a user that exists in the Stickfix database. This function verifies that the
          * `getUser` method successfully retrieves the user data from the database.
          *
-         * @param database The StickfixDatabase instance to be tested.
          * @throws AssertionError If the user retrieval does not result in a success or the returned user data is incorrect.
          */
-        private suspend fun testRetrievingExistentUser(database: StickfixDatabase) {
+        private suspend fun testRetrievingExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserInDatabase(database.database)
-            ) { user ->
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabaseAndUser()
+            ) { (database, user) ->
                 database.getUser(user)
                     .shouldBeRight()
                     .shouldNotBeNull()
@@ -227,30 +233,37 @@ class StickfixDatabaseTest : FreeSpec({
          * Tests setting the private mode for the default user in the Stickfix database. This function checks that the
          * `setPrivateMode` method correctly prevents updates to the default user's settings and returns a failure.
          *
-         * @param database The StickfixDatabase instance to be tested.
-         * @throws AssertionError If the private mode update does not result in a failure or the failure message is incorrect.
+         * @throws AssertionError If the private mode update does not result in a failure or the failure message is
+         *   incorrect.
          */
-        private suspend fun testSettingPrivateModeDefaultUser(database: StickfixDatabase) {
+        private suspend fun testSettingPrivateModeDefaultUser() {
             val user = StickfixUser(STICKFIX_DEFAULT_USERNAME, STICKFIX_DEFAULT_USER_ID)
-            checkAll(Arb.enum<PrivateMode>()) { mode ->
+            checkAll(
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase()
+                    .initialized()
+                    .withUsers(),
+                Arb.enum<PrivateMode>()
+            ) { database, mode ->
                 val result = database.setPrivateMode(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")
             }
         }
 
         /**
-         * Tests setting the private mode for a user that does not exist in the Stickfix database. This function verifies that
-         * the `setPrivateMode` method correctly handles attempts to update the settings of a non-existent user and returns a failure.
-         *
-         * @param database The StickfixDatabase instance to be tested.
-         * @throws AssertionError If the private mode update does not result in a failure or the failure message is incorrect.
+         * Tests setting the private mode for a user that does not exist in the Stickfix database. This function
+         * verifies that the `setPrivateMode` method correctly handles attempts to update the settings of a non-existent
+         * user and returns a failure.
          */
-        private suspend fun testSettingPrivateModeNonExistentUser(database: StickfixDatabase) {
+        private suspend fun testSettingPrivateModeNonExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserNotInDatabase(database.database),
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase()
+                    .initialized()
+                    .withUsers()
+                    .andNonExistentUser(),
                 Arb.enum<PrivateMode>()
-            ) { user, mode ->
+            ) { (database, user), mode ->
                 val result = database.setPrivateMode(user, mode)
                 assertDatabaseOperationFailed(result, "User must exist in the database")
             }
@@ -259,16 +272,13 @@ class StickfixDatabaseTest : FreeSpec({
         /**
          * Tests setting the private mode for an existing user in the Stickfix database. This function verifies that the
          * `setPrivateMode` method successfully updates the private mode setting for a user that exists in the database.
-         *
-         * @param database The StickfixDatabase instance to be tested.
-         * @throws AssertionError If the private mode update does not result in a success or the updated mode is incorrect.
          */
-        private suspend fun testSettingPrivateModeExistentUser(database: StickfixDatabase) {
+        private suspend fun testSettingPrivateModeExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserInDatabase(database.database),
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabaseAndUser(),
                 Arb.enum<PrivateMode>()
-            ) { user, mode ->
+            ) { (database, user), mode ->
                 database.setPrivateMode(user, mode)
                     .shouldBeRight()
                     .shouldNotBeNull()
@@ -279,12 +289,13 @@ class StickfixDatabaseTest : FreeSpec({
         /**
          * Tests setting the shuffle mode for the default user in the Stickfix database. This function checks that the
          * `setShuffle` method correctly prevents updates to the default user's settings and returns a failure.
-         *
-         * @param database The StickfixDatabase instance to be tested.
          */
-        private suspend fun testSettingShuffleModeDefaultUser(database: StickfixDatabase) {
+        private suspend fun testSettingShuffleModeDefaultUser() {
             val user = StickfixUser(STICKFIX_DEFAULT_USERNAME, STICKFIX_DEFAULT_USER_ID)
-            checkAll(Arb.enum<ShuffleMode>()) { mode ->
+            checkAll(
+                arbStickfixDatabase().initialized(),
+                Arb.enum<ShuffleMode>()
+            ) { database, mode ->
                 val result = database.setShuffle(user, mode)
                 assertDatabaseOperationFailed(result, "Cannot update default user's settings")
             }
@@ -294,15 +305,16 @@ class StickfixDatabaseTest : FreeSpec({
          * Tests setting the shuffle mode for a user that does not exist in the Stickfix database. This function
          * verifies that the `setShuffle` method correctly handles attempts to update the settings of a non-existent
          * user and returns a failure.
-         *
-         * @param database The StickfixDatabase instance to be tested.
          */
-        private suspend fun testSettingShuffleModeNonExistentUser(database: StickfixDatabase) {
+        private suspend fun testSettingShuffleModeNonExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserNotInDatabase(database.database),
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabase()
+                    .initialized()
+                    .withUserIds()
+                    .andNonExistentUser(),
                 Arb.enum<ShuffleMode>()
-            ) { user, mode ->
+            ) { (database, user), mode ->
                 val result = database.setShuffle(user, mode)
                 assertDatabaseOperationFailed(result, "User must exist in the database")
             }
@@ -311,15 +323,13 @@ class StickfixDatabaseTest : FreeSpec({
         /**
          * Tests setting the shuffle mode for an existing user in the Stickfix database. This function verifies that the
          * `setShuffle` method successfully updates the shuffle mode setting for a user that exists in the database.
-         *
-         * @param database The StickfixDatabase instance to be tested.
          */
-        private suspend fun testSettingShuffleModeExistentUser(database: StickfixDatabase) {
+        private suspend fun testSettingShuffleModeExistentUser() {
             checkAll(
-                PropTestConfig(listeners = listOf(ResetUsersTableListener(database.database))),
-                arbInitDatabaseWithUserInDatabase(database.database),
+                PropTestConfig(iterations = 100),
+                arbStickfixDatabaseAndUser(),
                 Arb.enum<ShuffleMode>()
-            ) { user, mode ->
+            ) { (database, user), mode ->
                 database.setShuffle(user, mode)
                     .shouldBeRight()
                     .shouldNotBeNull()
@@ -411,3 +421,92 @@ private fun Arb<StickfixDatabase>.withApiKey(apiKey: Arb<String> = arbKey()): Ar
             database
         }
     }
+
+/**
+ * Generates an arbitrary pair consisting of a `StickfixDatabase` instance and a `StickfixUser` that does not exist in
+ * the database.
+ *
+ * This function pairs each `StickfixDatabase` instance with a `StickfixUser` whose ID is not already present in the
+ * `Users` table of the associated database. It achieves this by filtering out users that already exist in the database,
+ * ensuring that the resulting user is non-existent within that database context.
+ *
+ * @return An `Arb<Pair<StickfixDatabase, StickfixUser>>` where the `StickfixUser` does not exist in the `Users` table
+ *   of the paired `StickfixDatabase`.
+ */
+private fun Arb<StickfixDatabase>.andNonExistentUser(): Arb<Pair<StickfixDatabase, StickfixUser>> =
+    flatMap { database ->
+        arbUser().filter {
+            transaction(database.database) {
+                Users.selectAll().where { Users.id eq it.id }.empty()
+            }
+        }.map { user ->
+            database to user
+        }
+    }
+
+/**
+ * Generates an arbitrary pair consisting of a `StickfixDatabase` instance and a `StickfixUser`.
+ *
+ * This function first creates a list of random `StickfixUser` instances and then pairs a randomly selected user from
+ * this list with a randomly generated `StickfixDatabase`. The resulting pair contains a `StickfixDatabase` and a
+ * `StickfixUser`, where the user may or may not exist in the database.
+ *
+ * @return An `Arb<Pair<StickfixDatabase, StickfixUser>>` where the pair includes a `StickfixDatabase` instance and a
+ *   randomly selected `StickfixUser`.
+ */
+private fun arbStickfixDatabaseAndUser(): Arb<Pair<StickfixDatabase, StickfixUser>> =
+    Arb.list(arbUser(), 1..10).flatMap { users ->
+        Arb.element(users).flatMap { user ->
+            arbStickfixDatabase()
+                .initialized()
+                .withUsers(Arb.constant(users))
+                .map { it to user }
+        }
+    }
+
+private fun Arb<StickfixDatabase>.withUsers(
+    users: Arb<List<StickfixUser>> = Arb.list(arbUser(), 1..10)
+): Arb<StickfixDatabase> =
+    flatMap { database ->
+        users.map { users ->
+            transaction(database.database) {
+                users.forEach { user ->
+                    if (Users.selectAll().where { Users.id eq user.id }.empty()) {
+                        Users.insert {
+                            it[id] = user.id
+                            it[username] = user.username
+                            it[state] = IdleState::class.simpleName!!
+                        }
+                    } else {
+                        Users.update({ Users.id eq user.id }) {
+                            it[username] = user.username
+                            it[state] = IdleState::class.simpleName!!
+                        }
+                    }
+                }
+            }
+            database
+        }
+    }
+
+/**
+ * Generates an arbitrary `StickfixUser` instance with a specified username and ID.
+ *
+ * This function creates a `StickfixUser` by first filtering out any IDs that match the default user ID
+ * (`STICKFIX_DEFAULT_USER_ID`), ensuring that the generated users are not the default user. It then pairs a valid,
+ * non-default user ID with a generated username to create a `StickfixUser`.
+ *
+ * @param username An `Arb<Username>` that generates arbitrary usernames for the user.
+ * @param id An `Arb<Long>` that generates arbitrary user IDs, which are filtered to exclude the default user ID.
+ * @return An `Arb<StickfixUser>` that produces arbitrary `StickfixUser` instances with valid usernames and IDs.
+ */
+private fun arbUser(
+    username: Arb<Username> = Arb.usernames(),
+    id: Arb<Long> = Arb.long()
+): Arb<StickfixUser> =
+    id.filter { it != STICKFIX_DEFAULT_USER_ID }
+        .flatMap { validId ->
+            username.map { name ->
+                StickfixUser(name.value, validId)
+            }
+        }

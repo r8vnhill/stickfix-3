@@ -3,6 +3,7 @@ package cl.ravenhill.stickfix.db
 import arrow.core.Either
 import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USERNAME
 import cl.ravenhill.stickfix.STICKFIX_DEFAULT_USER_ID
+import cl.ravenhill.stickfix.andNonExistentUserId
 import cl.ravenhill.stickfix.arbDatabase
 import cl.ravenhill.stickfix.assertDatabaseOperationFailed
 import cl.ravenhill.stickfix.chat.StickfixUser
@@ -14,6 +15,7 @@ import cl.ravenhill.stickfix.states.RevokeState
 import cl.ravenhill.stickfix.states.SealedState
 import cl.ravenhill.stickfix.states.ShuffleState
 import cl.ravenhill.stickfix.states.StartState
+import cl.ravenhill.stickfix.withUserIds
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.core.spec.style.scopes.FreeSpecContainerScope
@@ -34,18 +36,12 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
 @OptIn(ExperimentalKotest::class)
 class DatabaseServiceTest : FreeSpec({
-    lateinit var database: Database
-
-    beforeEach {
-        database = setupDatabase()
-    }
 
     "A DatabaseService" - {
         "retrieving a user" - {
@@ -134,7 +130,7 @@ class DatabaseServiceTest : FreeSpec({
             checkAll(
                 PropTestConfig(iterations = 100),
                 arbDatabaseService()
-                    .withUsers()
+                    .withUserIds()
                     .andNonExistentUserId()
             ) { (databaseService, userId) ->
                 val result = databaseService.getUser(userId)
@@ -173,7 +169,7 @@ class DatabaseServiceTest : FreeSpec({
             checkAll(
                 PropTestConfig(iterations = 100),
                 arbDatabaseService()
-                    .withUsers()
+                    .withUserIds()
                     .andNonExistentUserId()
             ) { (databaseService, userId) ->
                 val user = StickfixUser("user$userId", userId)
@@ -192,7 +188,7 @@ class DatabaseServiceTest : FreeSpec({
             checkAll(
                 PropTestConfig(iterations = 100),
                 arbDatabaseService()
-                    .withUsers()
+                    .withUserIds()
                     .andNonExistentUserId(),
                 arbStateBuilder()
             ) { (databaseService, userId), stateBuilder ->
@@ -248,7 +244,7 @@ class DatabaseServiceTest : FreeSpec({
             checkAll(
                 PropTestConfig(iterations = 100),
                 arbDatabaseService()
-                    .withUsers()
+                    .withUserIds()
                     .andNonExistentUserId()
             ) { (databaseService, userId) ->
                 val user = StickfixUser("user$userId", userId)
@@ -309,57 +305,6 @@ private fun arbDatabaseService(name: Arb<String> = Arb.string(1..16, Codepoint.a
 }
 
 /**
- * Enhances an arbitrary `DatabaseService` instance by pre-populating it with users based on the provided list of IDs.
- * This function creates users in the database corresponding to each ID in the provided list, assigning each user a
- * default username and state. It returns a new arbitrary `DatabaseService` instance with the users inserted.
- *
- * @param ids An arbitrary list of user IDs to be inserted into the database. Each ID in the list corresponds to a user
- *   that will be created with a default username in the format "user{id}" and an initial state of `IdleState`.
- * @return An `Arb<DatabaseService>` that generates instances of `DatabaseService`, each populated with users as
- *   specified by the provided list of IDs.
- */
-private fun Arb<DatabaseService>.withUsers(
-    ids: Arb<List<Long>> = Arb.list(Arb.long().filter { it != 0L }),
-): Arb<DatabaseService> = flatMap { dbService ->
-    ids.map {
-        transaction(dbService.database) {
-            SchemaUtils.create(Users)
-            it.forEach { id ->
-                if (Users.selectAll().where { Users.chatId eq id }.empty()) {
-                    Users.insert {
-                        it[chatId] = id
-                        it[username] = "user$id"
-                        it[state] = IdleState::class.simpleName!!
-                    }
-                }
-            }
-        }
-        dbService
-    }
-}
-
-
-/**
- * Enhances an arbitrary `DatabaseService` instance by pairing it with a non-existent user ID. This function finds a
- * random long value that is not currently used as a user ID in the database and pairs it with the provided
- * `DatabaseService`. The resulting pair can be used to test database operations where a non-existent user ID is
- * required.
- *
- * @return An `Arb<Pair<DatabaseService, Long>>` that generates pairs of `DatabaseService` instances and non-existent
- *   user IDs. The `DatabaseService` in each pair is unchanged, while the `Long` represents a user ID that does not
- *   exist in the corresponding database.
- */
-private fun Arb<DatabaseService>.andNonExistentUserId() = flatMap { dbService ->
-    Arb.long()
-        .filter { it != 0L }
-        .filter {
-            transaction(dbService.database) {
-                Users.selectAll().where { Users.chatId eq it }.empty()
-            }
-        }.map { dbService to it }
-}
-
-/**
  * Generates an arbitrary pair consisting of a `DatabaseService` instance and a user ID that exists in the database.
  *
  * This function first generates a list of unique, non-zero user IDs, then creates a `DatabaseService` with those users
@@ -370,11 +315,10 @@ private fun Arb<DatabaseService>.andNonExistentUserId() = flatMap { dbService ->
  * @return An `Arb` (arbitrary generator) that produces a pair of a `DatabaseService` and a user ID.
  */
 private fun arbDatabaseServiceAndUserId() = Arb.list(Arb.long().filter { it != 0L }, 1..10).flatMap { ids ->
-    arbDatabaseService().withUsers(Arb.constant(ids)).flatMap { dbService ->
+    arbDatabaseService().withUserIds(Arb.constant(ids)).flatMap { dbService ->
         Arb.element(ids).map { dbService to it }
     }
 }
-
 
 /**
  * Generates an arbitrary state builder function for a `StickfixUser`. This function returns an `Arb` instance that
